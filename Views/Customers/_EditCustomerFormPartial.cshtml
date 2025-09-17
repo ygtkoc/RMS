@@ -1,0 +1,124 @@
+﻿@model Dastone.Models.Customer
+
+<form id="editCustomerForm" asp-action="Edit" asp-controller="Customers" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="LOGICALREF" />
+
+    <div class="mb-3">
+        <label asp-for="ISPERSCOMP" class="form-label">Müşteri Türü</label>
+        <select name="ISPERSCOMP" class="form-select" id="customerTypeSelectEdit">
+            <option value="">Seçiniz</option>
+            <option value="true">Şahsi</option>
+            <option value="false">Tüzel</option>
+        </select>
+        <span asp-validation-for="ISPERSCOMP" class="text-danger"></span>
+    </div>
+
+    <div id="sahsiFieldsEdit">
+        <div class="mb-3">
+            <label asp-for="DEFINITION_" class="form-label">Adı</label>
+            <input asp-for="DEFINITION_" type="text" class="form-control" value="@Model.DEFINITION_" />
+            <span asp-validation-for="DEFINITION_" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="SURNAME" class="form-label">Soyadı</label>
+            <input asp-for="SURNAME" type="text" class="form-control" value="@Model.SURNAME" />
+            <span asp-validation-for="SURNAME" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="TCKNO" class="form-label">TC Kimlik No</label>
+            <input asp-for="TCKNO" type="text" class="form-control" value="@Model.TCKNO" maxlength="11" />
+            <span asp-validation-for="TCKNO" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div id="tuzelFieldsEdit" style="display: none;">
+        <div class="mb-3">
+            <label asp-for="DEFINITION_" class="form-label">Unvan</label>
+            <input asp-for="DEFINITION_" type="text" class="form-control" value="@Model.DEFINITION_" />
+            <span asp-validation-for="DEFINITION_" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="TAXNR" class="form-label">Vergi No</label>
+            <input asp-for="TAXNR" type="text" class="form-control" value="@Model.TAXNR" maxlength="10" />
+            <span asp-validation-for="TAXNR" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="TAXOFFICE" class="form-label">Vergi Dairesi</label>
+            <input asp-for="TAXOFFICE" type="text" class="form-control" value="@Model.TAXOFFICE" />
+            <span asp-validation-for="TAXOFFICE" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="EMAILADDR" class="form-label">E-posta</label>
+        <input asp-for="EMAILADDR" type="email" class="form-control" value="@Model.EMAILADDR" />
+        <span asp-validation-for="EMAILADDR" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="EMAILADDR2" class="form-label">2. E-posta (Opsiyonel)</label>
+        <input asp-for="EMAILADDR2" type="email" class="form-control" value="@Model.EMAILADDR2" />
+        <span asp-validation-for="EMAILADDR2" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="CELLPHONE" class="form-label">Telefon</label>
+        <input asp-for="CELLPHONE" type="tel" class="form-control" value="@Model.CELLPHONE" />
+        <span asp-validation-for="CELLPHONE" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="ADDR1" class="form-label">Adres</label>
+        <textarea asp-for="ADDR1" class="form-control" rows="3">@Model.ADDR1</textarea>
+        <span asp-validation-for="ADDR1" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary" id="submitEditCustomerForm">Müşteriyi Güncelle</button>
+    <div id="formMessageEditCustomer" class="mt-3 form-message"></div>
+</form>
+
+<script>
+    (function() {
+        // Sayfa yüklendiğinde mevcut değeri ayarla
+        const selectElement = document.getElementById('customerTypeSelectEdit');
+        const initialValue = '@Model.ISPERSCOMP';
+        if (initialValue === 'True') {
+            selectElement.value = 'true';
+        } else if (initialValue === 'False') {
+            selectElement.value = 'false';
+        } else {
+            selectElement.value = '';
+        }
+
+        function toggleCustomerTypeFieldsEdit() {
+            const selectedType = selectElement.value;
+            if (selectedType === 'true') {
+                document.getElementById('sahsiFieldsEdit').style.display = 'block';
+                document.getElementById('tuzelFieldsEdit').style.display = 'none';
+            } else if (selectedType === 'false') {
+                document.getElementById('sahsiFieldsEdit').style.display = 'none';
+                document.getElementById('tuzelFieldsEdit').style.display = 'block';
+            } else {
+                document.getElementById('sahsiFieldsEdit').style.display = 'none';
+                document.getElementById('tuzelFieldsEdit').style.display = 'none';
+            }
+        }
+
+        // İlk yüklemede toggle uygula
+        toggleCustomerTypeFieldsEdit();
+
+        // Değişiklik olduğunda toggle uygula
+        selectElement.addEventListener('change', toggleCustomerTypeFieldsEdit);
+
+        // Validasyon mesajlarını temizle
+        document.querySelectorAll('#editCustomerForm input, #editCustomerForm select, #editCustomerForm textarea')
+            .forEach(element => {
+                element.addEventListener('keyup', function() {
+                    const inputName = this.name;
+                    document.querySelector(`span[data-valmsg-for="${inputName}"]`).textContent = '';
+                });
+                element.addEventListener('change', function() {
+                    const inputName = this.name;
+                    document.querySelector(`span[data-valmsg-for="${inputName}"]`).textContent = '';
+                });
+            });
+    })();
+</script>

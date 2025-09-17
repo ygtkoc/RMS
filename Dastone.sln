@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dastone", "Dastone.csproj", "{C9A906E4-C05A-2C91-B4E3-CCB746FAA271}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C9A906E4-C05A-2C91-B4E3-CCB746FAA271}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9A906E4-C05A-2C91-B4E3-CCB746FAA271}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9A906E4-C05A-2C91-B4E3-CCB746FAA271}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9A906E4-C05A-2C91-B4E3-CCB746FAA271}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9AB04F56-209A-4B6E-8DF4-55AC7AC18FE8}
+	EndGlobalSection
+EndGlobal

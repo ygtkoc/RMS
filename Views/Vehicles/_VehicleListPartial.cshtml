@@ -1,0 +1,98 @@
+﻿@model Dastone.Models.VehiclesListPartialViewModel
+
+<div class="card mt-3">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h4 class="card-title">Araç Listesi (@Model.ActiveTab)</h4>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <form class="row row-cols-lg-auto g-0 align-items-center p-3 mb-1 bg-light-alt" id="searchForm_@Model.ActiveTab">
+            <div class="col-12 mt-0 me-1">
+                <div class="input-group">
+                    <input type="search" class="form-control form-control-sm" id="inlineFormSearch_@Model.ActiveTab" placeholder="Plaka, Marka, Model ara..." name="searchTerm" value="@Model.SearchTerm">
+                </div>
+            </div>
+            <div class="col-12 mt-0 me-1">
+                <label class="visually-hidden" for="sort-select_@Model.ActiveTab">Sırala</label>
+                <select class="form-select form-select-sm" id="sort-select_@Model.ActiveTab" name="sortBy">
+                    @if (Model.SortOptions != null)
+                    {
+                        @foreach (var item in Model.SortOptions)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-12 mt-0">
+                <button type="submit" class="btn btn-soft-primary btn-sm">
+                    <i class="fas fa-search me-1"></i>Ara
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="card-body">
+        @if (Model.Vehicles != null && Model.Vehicles.Any())
+        {
+            <ul class="list-group custom-list-group mb-n1">
+                @foreach (var vehicle in Model.Vehicles)
+                {
+                    <li class="list-group-item align-items-center d-flex justify-content-between vehicle-list-item"
+                        data-vehicle-id="@vehicle.AracID"
+                        data-active-tab="@Model.ActiveTab"
+                        style="cursor: pointer;">
+                        <div class="media">
+                            <img class="d-flex align-self-center me-3 rounded-circle" src="~/images/widgets/opp-1.png" alt="Araç Görseli" height="36">
+                            <div class="media-body align-self-center">
+                                <h6 class="mt-0 mb-1">@vehicle.Marka @vehicle.Model - @vehicle.Plaka</h6>
+                                <ul class="list-inline mb-0 text-muted">
+                                    <li class="list-inline-item me-2">
+                                        <span><i class="fas fa-map-marker-alt me-2 text-secondary font-14"></i></span>
+                                        @if (vehicle.Lokasyon != null)
+                                        {
+                                            <span>@vehicle.Lokasyon.LokasyonAdi</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Belirtilmemiş</span>
+                                        }
+                                    </li>
+                                    <li class="list-inline-item me-2">
+                                        <span><i class="fas fa-car me-2 text-secondary font-14"></i></span>
+                                        @if (vehicle.AktifMusteri != null)
+                                        {
+                                            <span>Kiralamada (@vehicle.AktifMusteri.DEFINITION_)</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Müsait</span>
+                                        }
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="align-self-center">
+                            <a href="#"
+                               class="btn-edit-vehicle"
+                               data-vehicle-id="@vehicle.AracID"
+                               data-modal-mode="edit"
+                               title="Aracı Düzenle">
+                                <i class="las la-pen text-secondary font-16"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@vehicle.AracID">
+                                <i class="las la-trash-alt text-secondary font-16"></i>
+                            </a>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="text-center p-3">Bu kategoriye ait araç bulunmamaktadır.</p>
+        }
+    </div>
+</div>

@@ -1,0 +1,350 @@
+﻿@model Dastone.Models.Customer
+
+<div class="modal-body-content">
+    <ul class="nav nav-tabs nav-tabs-custom custom-tabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#customerGeneralInfoTab" role="tab" aria-selected="true">
+                <span class="d-block d-sm-none"><i class="fas fa-info-circle"></i></span>
+                <span class="d-none d-sm-block">Genel Bilgiler</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#customerUpdateInfoTab" role="tab" aria-selected="false">
+                <span class="d-block d-sm-none"><i class="fas fa-edit"></i></span>
+                <span class="d-none d-sm-block">Müşteri Bilgilerini Güncelle</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#customerRentalsTab" role="tab" aria-selected="false">
+                <span class="d-block d-sm-none"><i class="fas fa-car"></i></span>
+                <span class="d-none d-sm-block">Kiralama Geçmişi</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#customerVehiclesTab" role="tab" aria-selected="false">
+                <span class="d-block d-sm-none"><i class="fas fa-truck"></i></span>
+                <span class="d-none d-sm-block">Araçlar</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#customerPenaltiesTab" role="tab" aria-selected="false">
+                <span class="d-block d-sm-none"><i class="fas fa-exclamation-triangle"></i></span>
+                <span class="d-none d-sm-block">Cezalar</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#customerHighwayPassesTab" role="tab" aria-selected="false">
+                <span class="d-block d-sm-none"><i class="fas fa-road"></i></span>
+                <span class="d-none d-sm-block">Otoyol Geçişleri</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content p-3 text-muted">
+        <div class="tab-pane active" id="customerGeneralInfoTab" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <dl class="row dl-horizontal">
+                        <dt class="col-sm-4">Müşteri Türü:</dt>
+                        <dd class="col-sm-8">@(Model.IsPersonalCompany.HasValue ? (Model.IsPersonalCompany.Value ? "Şahsi" : "Tüzel") : "Bilinmiyor")</dd>
+
+                        <dt class="col-sm-4">Adı Soyadı/Unvanı:</dt>
+                        <dd class="col-sm-8">
+                            @(string.IsNullOrEmpty(Model.DEFINITION_)
+                                                        ? (!string.IsNullOrEmpty(Model.NAME) || !string.IsNullOrEmpty(Model.SURNAME)
+                                                        ? (Model.NAME + " " + (Model.SURNAME ?? ""))
+                                                        : "Belirtilmemiş")
+                                                        : Model.DEFINITION_)
+                        </dd>
+
+                        @if (Model.IsPersonalCompany.HasValue && Model.IsPersonalCompany.Value)
+                        {
+                            <dt class="col-sm-4">Kimlik No:</dt>
+                            <dd class="col-sm-8">@Html.DisplayFor(model => model.TCKNO)</dd>
+                        }
+                        else if (Model.IsPersonalCompany.HasValue && !Model.IsPersonalCompany.Value)
+                        {
+                            <dt class="col-sm-4">Vergi No:</dt>
+                            <dd class="col-sm-8">@Html.DisplayFor(model => model.TAXNR)</dd>
+
+                            <dt class="col-sm-4">Vergi Dairesi:</dt>
+                            <dd class="col-sm-8">@Html.DisplayFor(model => model.TAXOFFICE)</dd>
+                        }
+
+                        <dt class="col-sm-4">Telefon:</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.CELLPHONE)</dd>
+
+                        <dt class="col-sm-4">E-posta:</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.EMAILADDR)</dd>
+
+                        <dt class="col-sm-4">E-posta 2:</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.EMAILADDR2)</dd>
+
+                        <dt class="col-sm-4">E-posta 3:</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.EMAILADDR3)</dd>
+
+                        <dt class="col-sm-4">Adres:</dt>
+                        <dd class="col-sm-8">@(Model.ADDR1 ?? "Belirtilmemiş")</dd>
+
+                        <dt class="col-sm-4">Kayıt Tarihi:</dt>
+                        <dd class="col-sm-8">@(Model.CAPIBLOCK_CREADEDDATE.HasValue? Model.CAPIBLOCK_CREADEDDATE.Value.ToString("dd.MM.yyyy HH:mm") : "Belirtilmemiş")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane" id="customerUpdateInfoTab" role="tabpanel">
+            <form id="updateCustomerForm" asp-action="UpdateCustomerDetails" asp-controller="Customers" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="LOGICALREF" />
+                <input type="hidden" asp-for="ISPERSCOMP" />
+
+                <div class="row">
+                    <div class="col-md-6 col-sm-12">
+                        <div class="mb-3">
+                            <label asp-for="DEFINITION_" class="form-label">@((Model.IsPersonalCompany.HasValue && Model.IsPersonalCompany.Value) ? "Adı" : "Unvanı")</label>
+                            <input asp-for="DEFINITION_" type="text" class="form-control" />
+                            <span asp-validation-for="DEFINITION_" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    @if (Model.IsPersonalCompany.HasValue && Model.IsPersonalCompany.Value)
+                    {
+                        <div class="col-md-6 col-sm-12">
+                            <div class="mb-3">
+                                <label asp-for="NAME" class="form-label">Adı</label>
+                                <input asp-for="NAME" type="text" class="form-control" />
+                                <span asp-validation-for="NAME" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-sm-12">
+                            <div class="mb-3">
+                                <label asp-for="SURNAME" class="form-label">Soyadı</label>
+                                <input asp-for="SURNAME" type="text" class="form-control" />
+                                <span asp-validation-for="SURNAME" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-sm-12">
+                            <div class="mb-3">
+                                <label asp-for="TCKNO" class="form-label">Kimlik No</label>
+                                <input asp-for="TCKNO" type="text" class="form-control" />
+                                <span asp-validation-for="TCKNO" class="text-danger"></span>
+                            </div>
+                        </div>
+                    }
+                    else if (Model.IsPersonalCompany.HasValue && !Model.IsPersonalCompany.Value)
+                    {
+                        <div class="col-md-6 col-sm-12">
+                            <div class="mb-3">
+                                <label asp-for="TAXNR" class="form-label">Vergi No</label>
+                                <input asp-for="TAXNR" type="text" class="form-control" />
+                                <span asp-validation-for="TAXNR" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-sm-12">
+                            <div class="mb-3">
+                                <label asp-for="TAXOFFICE" class="form-label">Vergi Dairesi</label>
+                                <input asp-for="TAXOFFICE" type="text" class="form-control" />
+                                <span asp-validation-for="TAXOFFICE" class="text-danger"></span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 col-sm-12">
+                        <div class="mb-3">
+                            <label asp-for="CELLPHONE" class="form-label">Telefon</label>
+                            <input asp-for="CELLPHONE" type="text" class="form-control" />
+                            <span asp-validation-for="CELLPHONE" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 col-sm-12">
+                        <div class="mb-3">
+                            <label asp-for="EMAILADDR" class="form-label">E-posta</label>
+                            <input asp-for="EMAILADDR" type="email" class="form-control" />
+                            <span asp-validation-for="EMAILADDR" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-12">
+                        <div class="mb-3">
+                            <label asp-for="EMAILADDR2" class="form-label">E-posta 2</label>
+                            <input asp-for="EMAILADDR2" type="email" class="form-control" />
+                            <span asp-validation-for="EMAILADDR2" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-12">
+                        <div class="mb-3">
+                            <label asp-for="EMAILADDR3" class="form-label">E-posta 3</label>
+                            <input asp-for="EMAILADDR3" type="email" class="form-control" />
+                            <span asp-validation-for="EMAILADDR3" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ADDR1" class="form-label">Adres</label>
+                    <textarea asp-for="ADDR1" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="ADDR1" class="text-danger"></span>
+                </div>
+
+                <div class="mt-3 form-message"></div>
+            </form>
+        </div>
+
+        <div class="tab-pane" id="customerRentalsTab" role="tabpanel">
+            <h4>Kiralama Geçmişi</h4>
+            @if (Model.Kiralamalar != null && Model.Kiralamalar.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Kiralama ID</th>
+                                <th>Araç (Plaka)</th>
+                                <th>Başlangıç Tarihi</th>
+                                <th>Bitiş Tarihi</th>
+                                <th>Durum</th>
+                                <th>Lokasyon</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var kiralama in Model.Kiralamalar.OrderBy(k => k.BaslangicTarihi))
+                            {
+                                <tr>
+                                    <td>@kiralama.KiralamaID</td>
+                                    <td>@(kiralama.Arac?.Plaka ?? "Belirtilmemiş")</td>
+                                    <td>@kiralama.BaslangicTarihi.ToString("dd.MM.yyyy")</td>
+                                    <td>@(kiralama.BitisTarihi?.ToString("dd.MM.yyyy") ?? "Devam Ediyor")</td>
+                                    <td>@kiralama.Durum</td>
+                                    <td>@(kiralama.Lokasyon?.LokasyonAdi ?? "Belirtilmemiş")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">Bu müşteriye ait kiralama geçmişi bulunmamaktadır.</div>
+            }
+        </div>
+
+        <div class="tab-pane" id="customerVehiclesTab" role="tabpanel">
+            <h4>Araçlar</h4>
+            @if (Model.Araclar != null && Model.Araclar.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Araç ID</th>
+                                <th>Plaka</th>
+                                <th>Marka</th>
+                                <th>Model</th>
+                                <th>Yıl</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var arac in Model.Araclar)
+                            {
+                                <tr>
+                                    <td>@arac.AracID</td>
+                                    <td>@arac.Plaka</td>
+                                    <td>@arac.Marka</td>
+                                    <td>@arac.Model</td>
+                                    <td>@arac.ModelYili</td>
+                                    <td>@arac.Durum</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">Bu müşteriye ait araç bulunmamaktadır.</div>
+            }
+        </div>
+
+        <div class="tab-pane" id="customerPenaltiesTab" role="tabpanel">
+            <h4>Cezalar</h4>
+            @if (Model.Cezalar != null && Model.Cezalar.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Ceza ID</th>
+                                <th>Tarih</th>
+                                <th>Tutar (TL)</th>
+                                <th>Açıklama</th>
+                                <th>Ödendi</th>
+                                <th>Ceza Tanımı</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var ceza in Model.Cezalar.OrderBy(c => c.CezaTarihi))
+                            {
+                                <tr>
+                                    <td>@ceza.CezaID</td>
+                                    <td>@ceza.CezaTarihi.ToString("dd.MM.yyyy")</td>
+                                    <td>@ceza.Tutar.ToString("N2")</td>
+                                    <td>@ceza.Aciklama</td>
+                                    <td>@(ceza.Odendi ? "Evet" : "Hayır")</td>
+                                    <td>@(ceza.CezaTanimi?.KisaAciklama ?? "Belirtilmemiş")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">Bu müşteriye ait ceza bulunmamaktadır.</div>
+            }
+        </div>
+
+        <div class="tab-pane" id="customerHighwayPassesTab" role="tabpanel">
+            <h4>Otoyol Geçişleri</h4>
+            @if (Model.OtoyolGecisleri != null && Model.OtoyolGecisleri.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Geçiş ID</th>
+                                <th>Tarih</th>
+                                <th>Tutar (TL)</th>
+                                <th>Açıklama</th>
+                                <th>Lokasyon</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var gecis in Model.OtoyolGecisleri.OrderBy(g => g.GecisTarihi))
+                            {
+                                <tr>
+                                    <td>@gecis.GecisID</td>
+                                    <td>@gecis.GecisTarihi.ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td>@gecis.Tutar.ToString("N2")</td>
+                                    <td>@gecis.Aciklama</td>
+                                    <td>@(gecis.Lokasyon?.LokasyonAdi ?? "Belirtilmemiş")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">Bu müşteriye ait otoyol geçişi bulunmamaktadır.</div>
+            }
+        </div>
+    </div>
+</div>

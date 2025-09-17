@@ -1,0 +1,27 @@
+﻿@model Dastone.Models.CezaTanimi
+
+<form id="updatePenaltyDefinitionForm" asp-action="UpdatePenaltyDefinition" asp-controller="Parameters" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CezaTanimiID" />
+
+    <div class="mb-3">
+        <label asp-for="CezaKodu" class="form-label">Ceza Kodu</label>
+        <input asp-for="CezaKodu" class="form-control" />
+        <span asp-validation-for="CezaKodu" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="KisaAciklama" class="form-label">Kısa Açıklama</label>
+        <input asp-for="KisaAciklama" class="form-control" />
+        <span asp-validation-for="KisaAciklama" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="UzunAciklama" class="form-label">Uzun Açıklama</label>
+        <textarea asp-for="UzunAciklama" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="UzunAciklama" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Güncelle</button>
+    <div class="mt-3 form-message"></div>
+</form>

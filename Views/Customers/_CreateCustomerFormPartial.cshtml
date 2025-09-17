@@ -1,0 +1,117 @@
+﻿@model Dastone.Models.Customer
+
+<form id="createCustomerForm" asp-action="Create" asp-controller="Customers" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label asp-for="IsPersonalCompany" class="form-label">Müşteri Türü</label>
+        <select asp-for="IsPersonalCompany" class="form-select" id="customerTypeSelect">
+            <option value="true">Şahsi</option>
+            <option value="false">Tüzel</option>
+        </select>
+        <span asp-validation-for="IsPersonalCompany" class="text-danger"></span>
+    </div>
+
+    <div id="sahsiFields">
+        <div class="mb-3">
+            <label asp-for="NAME" class="form-label">Adı</label>
+            <input asp-for="NAME" type="text" class="form-control" maxlength="50" required />
+            <span asp-validation-for="NAME" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="SURNAME" class="form-label">Soyadı</label>
+            <input asp-for="SURNAME" type="text" class="form-control" maxlength="50" required />
+            <span asp-validation-for="SURNAME" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="TCKNO" class="form-label">TC Kimlik No</label>
+            <input asp-for="TCKNO" type="text" class="form-control" maxlength="11" pattern="\d{11}" required />
+            <span asp-validation-for="TCKNO" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div id="tuzelFields" style="display: none;">
+        <div class="mb-3">
+            <label asp-for="NAME" class="form-label">Unvan</label>
+            <input asp-for="NAME" type="text" class="form-control" maxlength="50" required />
+            <span asp-validation-for="NAME" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="TAXNR" class="form-label">Vergi No</label>
+            <input asp-for="TAXNR" type="text" class="form-control" maxlength="10" pattern="\d{10}" required />
+            <span asp-validation-for="TAXNR" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="TAXOFFICE" class="form-label">Vergi Dairesi</label>
+            <input asp-for="TAXOFFICE" type="text" class="form-control" maxlength="100" required />
+            <span asp-validation-for="TAXOFFICE" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CODE" class="form-label">Müşteri Kodu</label>
+        <input asp-for="CODE" type="text" class="form-control" maxlength="20" readonly />
+        <span asp-validation-for="CODE" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ACTIVE" class="form-label">Aktif Durum</label>
+        <select asp-for="ACTIVE" class="form-select">
+            <option value="true">Evet</option>
+            <option value="false">Hayır</option>
+        </select>
+        <span asp-validation-for="ACTIVE" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="EMAILADDR" class="form-label">E-posta</label>
+        <input asp-for="EMAILADDR" type="email" class="form-control" maxlength="100" required />
+        <span asp-validation-for="EMAILADDR" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="EMAILADDR2" class="form-label">2. E-posta (Opsiyonel)</label>
+        <input asp-for="EMAILADDR2" type="email" class="form-control" maxlength="100" />
+        <span asp-validation-for="EMAILADDR2" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="CELLPHONE" class="form-label">Telefon</label>
+        <input asp-for="CELLPHONE" type="tel" class="form-control" maxlength="20" pattern="[0-9]{10,20}" required />
+        <span asp-validation-for="CELLPHONE" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="ADDR1" class="form-label">Adres</label>
+        <textarea asp-for="ADDR1" class="form-control" rows="3" required></textarea>
+        <span asp-validation-for="ADDR1" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary" id="submitCustomerForm">Müşteri Oluştur</button>
+    <div id="formMessageCustomer" class="mt-3 form-message"></div>
+</form>
+
+<script>
+    (function() {
+        function toggleCustomerTypeFields() {
+            const selectedType = $('#customerTypeSelect').val();
+            if (selectedType === "true") {
+                $('#sahsiFields').show();
+                $('#tuzelFields').hide();
+                $('#tuzelFields input').val('');
+                $('#tuzelFields textarea').val('');
+            } else if (selectedType === "false") {
+                $('#sahsiFields').hide();
+                $('#tuzelFields').show();
+                $('#sahsiFields input').val('');
+                $('#sahsiFields textarea').val('');
+            }
+            $.validator.unobtrusive.parse($('#createCustomerForm'));
+        }
+
+        toggleCustomerTypeFields();
+        $('#customerTypeSelect').on('change', toggleCustomerTypeFields);
+
+        $('#createCustomerForm input, #createCustomerForm select, #createCustomerForm textarea').on('keyup change', function() {
+            const inputName = $(this).attr('name');
+            $(`span[data-valmsg-for="${inputName}"]`).text('');
+        });
+    })();
+</script>

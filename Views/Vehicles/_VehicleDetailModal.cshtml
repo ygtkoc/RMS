@@ -1,0 +1,29 @@
+﻿@* Views/Shared/_VehicleDetailModal.cshtml *@
+@{
+    Layout = string.Empty;
+}
+
+<div class="modal fade" id="aracDetayModal" tabindex="-1" aria-labelledby="aracDetayModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title m-0 text-white" id="aracDetayModalLabel">
+                    <i class="fas fa-car-alt me-2"></i> Araç Detayları
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalDetailContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-soft-secondary btn-sm" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    @* Modal için temel JavaScript (yükleme _VehicleListPartial.cshtml'de yapıldığı için boş bırakıldı) *@
+    @section Scripts {
+        <script>
+            console.log('[_VehicleDetailModal] Script bloğu yüklendi.');
+        </script>
+    }

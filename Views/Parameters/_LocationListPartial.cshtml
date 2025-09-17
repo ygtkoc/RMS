@@ -1,0 +1,106 @@
+﻿@model IEnumerable<Dastone.Models.Lokasyon>
+@{
+    var pageNumber = (int?)ViewData["PageNumber"] ?? 1;
+    var pageSize = (int?)ViewData["PageSize"] ?? 20;
+    var totalCount = (int?)ViewData["TotalCount"] ?? 0;
+    var totalPages = (int?)ViewData["TotalPages"] ?? 1;
+    var searchQuery = (string)ViewData["SearchQuery"] ?? "";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Lokasyon Tanımları</h5>
+    <button class="btn btn-primary" id="btnOpenCreateLocation">
+        Lokasyon Tanımı Oluştur
+    </button>
+</div>
+
+<div class="input-group mb-3">
+    <input type="text" id="locationSearchInput" class="form-control" placeholder="Ara (Ad / Açıklama)" value="@searchQuery" />
+    <button class="btn btn-outline-secondary" id="btnSearchLocation">Ara</button>
+</div>
+
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th style="width:120px;">ID</th>
+            <th>Lokasyon Adı</th>
+            <th>Açıklama</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var l in Model)
+            {
+                <tr>
+                    <td>@l.LokasyonID</td>
+                    <td>@l.LokasyonAdi</td>
+                    <td>@l.Aciklama</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr><td colspan="3" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
+        }
+    </tbody>
+</table>
+
+<nav aria-label="Lokasyon Sayfaları" class="mt-2">
+    <ul class="pagination mb-0">
+        <li class="page-item @(pageNumber <= 1 ? "disabled" : "")">
+            <a class="page-link" href="#" data-page="@(pageNumber - 1)">Önceki</a>
+        </li>
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <li class="page-item @(i == pageNumber ? "active" : "")">
+                <a class="page-link" href="#" data-page="@i">@i</a>
+            </li>
+        }
+        <li class="page-item @(pageNumber >= totalPages ? "disabled" : "")">
+            <a class="page-link" href="#" data-page="@(pageNumber + 1)">Sonraki</a>
+        </li>
+    </ul>
+</nav>
+
+<!-- Create Modal -->
+<div class="modal fade" id="createLocationModal" tabindex="-1" aria-hidden="true"></div>
+
+@section Scripts {
+    <script>
+        (function(){
+            const tabHost = $("#parameters-tab-content"); // Sekmenin içini yüklediğiniz container ID’si
+
+            // Arama
+            $("#btnSearchLocation").on("click", function(){
+                const q = $("#locationSearchInput").val() || "";
+                loadLocations(1, @pageSize, q);
+            });
+
+            // Sayfalama
+            $(".pagination").on("click", "a.page-link", function(e){
+                e.preventDefault();
+                const page = $(this).data("page");
+                const q = $("#locationSearchInput").val() || "";
+                if (page) loadLocations(page, @pageSize, q);
+            });
+
+            // Create modal aç
+            $("#btnOpenCreateLocation").on("click", function(){
+                $.get("@Url.Action("CreateLocationFormPartial", "Parameters")", function(html){
+                    $("#createLocationModal").html(html).modal("show");
+                });
+            });
+
+            // Listeyi yenile (outside için global bir fonk)
+            window.loadLocations = function(pageNumber, pageSize, searchQuery){
+                $.get("@Url.Action("GetLocationsForTab", "Parameters")",
+                    { pageNumber, pageSize, searchQuery },
+                    function(html){
+                        // içinde bulunduğumuz tab container'a bas
+                        tabHost.html(html);
+                    });
+            }
+        })();
+    </script>
+}

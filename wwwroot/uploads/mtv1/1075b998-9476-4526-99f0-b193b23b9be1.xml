@@ -1,0 +1,36 @@
+<Invoice>
+  <InvoiceID>1</InvoiceID>
+  <InvoiceNumber>CEZA20250622020541-8</InvoiceNumber>
+  <InvoiceType>SATIS</InvoiceType>
+  <InvoiceDate>2025-06-22</InvoiceDate>
+  <IssueDate>2025-06-22</IssueDate>
+  <IssueTime>02:05:41</IssueTime>
+  <TotalAmountDue>500.00</TotalAmountDue>
+  <Notes>Trafik Cezası Faturası. 34ABU902 plakalı aracın 20-Dec-25 tarihli Ceza Açıklama ücretidir.</Notes>
+  <Customer>
+    <MusteriID>33</MusteriID>
+    <Ad>MAVİ SULAR TESİS HİZM.YÖNETİM</Ad>
+    <Soyad>SAN.VE TİCARET LTD.ŞTİ.</Soyad>
+    <Eposta>yigitefekoc06@gmail.com</Eposta>
+  </Customer>
+  <CompanyInfo>
+    <CompanyName>GÜRBAŞLAR OTOMOTİV SAN. VE TİC.A.Ş.</CompanyName>
+    <TaxNumber>4400037341</TaxNumber>
+  </CompanyInfo>
+  <InvoiceItems>
+    <Item>
+      <InvoiceItemID>1</InvoiceItemID>
+      <ItemCode>CEZA001</ItemCode>
+      <Description>Ceza Açıklama (34ABU902)</Description>
+      <Quantity>1.0000</Quantity>
+      <Unit>ADET</Unit>
+      <UnitPrice>500.00</UnitPrice>
+      <LineTotal>500.00</LineTotal>
+      <VatRate>0.00</VatRate>
+      <VatAmount>0.00</VatAmount>
+      <VatExemptionReason>KDV Kanunu Madde 17/4-g</VatExemptionReason>
+      <VatExemptionCode>407</VatExemptionCode>
+      <CezaID>8</CezaID>
+    </Item>
+  </InvoiceItems>
+</Invoice>

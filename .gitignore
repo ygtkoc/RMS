@@ -1,0 +1,11 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build çıktıları
+bin/
+obj/
+
+# SVN klasörü
+.svn/

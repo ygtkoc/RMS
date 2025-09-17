@@ -1,0 +1,423 @@
+﻿@model Dastone.Models.VehiclesDashboardViewModel
+
+@{
+    ViewData["Title"] = "Araçlar";
+}
+
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="page-title-box">
+                <div class="row">
+                    <div class="col">
+                        <h4 class="page-title">Araçlar</h4>
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="javascript:void(0);">RMS</a></li>
+                            <li class="breadcrumb-item active">Araçlar</li>
+                        </ol>
+                    </div>
+                    <div class="col-auto align-self-center">
+                        <button class="btn btn-sm btn-soft-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#newVehicleOffcanvas" aria-controls="newVehicleOffcanvas">
+                            <i data-feather="plus" class="align-self-center icon-xs me-1"></i> Araç Oluştur
+                        </button>
+                        <button class="btn btn-sm btn-soft-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#newRentalOffcanvas" aria-controls="newRentalOffcanvas">
+                            <i data-feather="plus" class="align-self-center icon-xs me-1"></i> Kiralama Oluştur
+                        </button>
+                        <button class="btn btn-sm btn-soft-danger" type="button" data-bs-toggle="offcanvas" data-bs-target="#newPenaltyOffcanvas" aria-controls="newPenaltyOffcanvas">
+                            <i data-feather="plus" class="align-self-center icon-xs me-1"></i> Ceza Oluştur
+                        </button>
+                        <button class="btn btn-sm btn-soft-warning" type="button" data-bs-toggle="offcanvas" data-bs-target="#newTollPassOffcanvas" aria-controls="newTollPassOffcanvas">
+                            <i data-feather="plus" class="align-self-center icon-xs me-1"></i> Otoyol Geçişi
+                        </button>
+                        <a asp-controller="Vehicles" asp-action="ExportToExcel" class="btn btn-sm btn-soft-success">
+                            <i data-feather="file-export" class="align-self-center icon-xs me-1"></i> Excel'e Aktar
+                        </a>
+                        <button class="btn btn-sm btn-soft-info" type="button" data-bs-toggle="offcanvas" data-bs-target="#importExcelOffcanvas" aria-controls="importExcelOffcanvas">
+                            <i data-feather="file-import" class="align-self-center icon-xs me-1"></i> Excel'den İçeri Aktar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (ViewContext.HttpContext.Request.Query["success"] == "true")
+    {
+        <div class="alert alert-success alert-dismissible fade show border-0" role="alert">
+            <strong>Başarılı!</strong> İşlem başarıyla tamamlandı! 👍
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+        </div>
+    }
+
+    <div class="card-body">
+        <ul class="nav nav-tabs" id="vehicleTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link @(Model.ActiveTab == "rented" ? "active" : "")" id="rented-tab" data-bs-toggle="tab" href="#rentedVehicles" role="tab" aria-controls="rentedVehicles" aria-selected="@(Model.ActiveTab == "rented" ? "true" : "false")">
+                    Kiralamadaki Araçlar (@Model.TotalRentedVehiclesCount)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(Model.ActiveTab == "available" ? "active" : "")" id="available-tab" data-bs-toggle="tab" href="#availableVehicles" role="tab" aria-controls="availableVehicles" aria-selected="@(Model.ActiveTab == "available" ? "true" : "false")">
+                    Stoktaki Araçlar (@Model.TotalAvailableVehiclesCount)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(Model.ActiveTab == "secondhand" ? "active" : "")" id="secondhand-tab" data-bs-toggle="tab" href="#secondHandVehicles" role="tab" aria-controls="secondHandVehicles" aria-selected="@(Model.ActiveTab == "secondhand" ? "true" : "false")">
+                    İkinci El Araçlar (@Model.TotalSecondHandVehiclesCount)
+                </a>
+            </li>
+        </ul>
+        <div class="tab-content" id="vehicleTabsContent">
+            <div class="tab-pane fade @(Model.ActiveTab == "rented" ? "show active" : "")" id="rentedVehicles" role="tabpanel" aria-labelledby="rented-tab">
+                @await Html.PartialAsync("_VehicleListPartial", Model.RentedVehiclesPartial)
+            </div>
+            <div class="tab-pane fade @(Model.ActiveTab == "available" ? "show active" : "")" id="availableVehicles" role="tabpanel" aria-labelledby="available-tab">
+                @await Html.PartialAsync("_VehicleListPartial", Model.AvailableVehiclesPartial)
+            </div>
+            <div class="tab-pane fade @(Model.ActiveTab == "secondhand" ? "show active" : "")" id="secondHandVehicles" role="tabpanel" aria-labelledby="secondhand-tab">
+                @await Html.PartialAsync("_VehicleListPartial", Model.SecondHandVehiclesPartial)
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="newVehicleOffcanvas" aria-labelledby="newVehicleOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title mt-0" id="newVehicleOffcanvasLabel">Yeni Araç Ekle</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+        </div>
+        <div class="offcanvas-body"></div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="newRentalOffcanvas" aria-labelledby="newRentalOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title mt-0" id="newRentalOffcanvasLabel">Yeni Kiralama Oluştur</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+        </div>
+        <div class="offcanvas-body"></div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="newPenaltyOffcanvas" aria-labelledby="newPenaltyOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title mt-0" id="newPenaltyOffcanvasLabel">Yeni Ceza Oluştur</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+        </div>
+        <div class="offcanvas-body"></div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="newTollPassOffcanvas" aria-labelledby="newTollPassOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title mt-0" id="newTollPassOffcanvasLabel">Yeni Otoyol Geçişi</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+        </div>
+        <div class="offcanvas-body"></div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="importExcelOffcanvas" aria-labelledby="importExcelOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title mt-0" id="importExcelOffcanvasLabel">Excel'den İçeri Aktar</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+        </div>
+        <div class="offcanvas-body"></div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_VehicleDetailModal")
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            console.log('[Index] Document ready: Scriptler yüklendi.');
+
+            // Offcanvas'lara form yükleme fonksiyonu
+            function loadFormIntoOffcanvas(offcanvasId, url) {
+                const offcanvasElement = document.getElementById(offcanvasId);
+                if (!offcanvasElement) {
+                    console.error(`Offcanvas ${offcanvasId} bulunamadı!`);
+                    return;
+                }
+
+                offcanvasElement.addEventListener('show.bs.offcanvas', function () {
+                    const $offcanvasBody = $(`#${offcanvasId} .offcanvas-body`);
+                    $offcanvasBody.empty().html(`
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Yükleniyor...</span>
+                            </div>
+                            <p class="mt-2">Form yükleniyor...</p>
+                        </div>
+                    `);
+
+                    $.ajax({
+                        url: url,
+                        type: 'GET',
+                        success: function (data) {
+                            $offcanvasBody.html(data);
+                            $offcanvasBody.find('form').removeData('validator');
+                            $offcanvasBody.find('form').removeData('unobtrusiveValidation');
+                            $.validator.unobtrusive.parse($offcanvasBody.find('form'));
+
+                            $offcanvasBody.find('script').each(function () {
+                                if (this.src) {
+                                    if (!$(`script[src="${this.src}"]`).length) {
+                                        var script = document.createElement('script');
+                                        script.src = this.src;
+                                        document.body.appendChild(script);
+                                    }
+                                } else {
+                                    try {
+                                        new Function('window', this.innerHTML).call(window, window);
+                                    } catch (e) {
+                                        console.error(`Offcanvas ${offcanvasId} içindeki inline script çalıştırılırken hata oluştu:`, e);
+                                    }
+                                }
+                            });
+
+                            if (offcanvasId === 'newRentalOffcanvas' && typeof initializeDateValidation === 'function') {
+                                initializeDateValidation();
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error(`Offcanvas ${offcanvasId} formu yüklenemedi:`, xhr);
+                            $(`#${offcanvasId} .offcanvas-body`).html(`<div class="alert alert-danger">Form yüklenemedi: ${xhr.statusText || 'Bilinmeyen Hata'}. Lütfen sayfayı yenileyin.</div>`);
+                        }
+                    });
+                });
+            }
+
+            loadFormIntoOffcanvas('newVehicleOffcanvas', '@Url.Action("CreateVehicleFormPartial", "Vehicles")');
+            loadFormIntoOffcanvas('newRentalOffcanvas', '@Url.Action("CreateRentalFormPartial", "Vehicles")');
+            loadFormIntoOffcanvas('newPenaltyOffcanvas', '@Url.Action("CreatePenaltyFormPartial", "Vehicles")');
+            loadFormIntoOffcanvas('newTollPassOffcanvas', '@Url.Action("CreateTollPassFormPartial", "Vehicles")');
+            loadFormIntoOffcanvas('importExcelOffcanvas', '@Url.Action("ImportFromExcelPartial", "Vehicles")');
+
+               $(document).on('submit', 'form', function (e) {
+            e.preventDefault();
+            const $form = $(this);
+            const formId = $form.attr('id');
+
+            if (formId === 'editVehicleForm' || formId === 'createVehicleForm' || formId === 'createRentalForm' ||
+                formId === 'createPenaltyForm' || formId === 'createTollPassForm' || formId === 'importFromExcel') {
+                if ($form.data('validator') && !$form.valid()) {
+                    $form.find('.form-message').text('Lütfen formdaki hataları düzeltin (örneğin, dosya seçin).').addClass('alert alert-danger');
+                    console.log('Form validation failed:', $form.validate().errorList);
+                    return;
+                }
+
+                const url = $form.attr('action');
+                const method = $form.attr('method') || 'POST';
+                const isMultipart = $form.attr('enctype') === 'multipart/form-data';
+                const formData = isMultipart ? new FormData($form[0]) : $form.serialize();
+
+                $form.find('.text-danger').empty();
+                $form.find('.form-message').empty().removeClass('alert alert-danger alert-success')
+                    .html('<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div>');
+
+                $.ajax({
+                    type: method,
+                    url: url,
+                    data: formData,
+                    processData: !isMultipart,
+                    contentType: isMultipart ? false : 'application/x-www-form-urlencoded; charset=UTF-8',
+                    success: function (response) {
+                        const $msgDiv = $form.find('.form-message');
+                        if (response.success) {
+                            $msgDiv.text(response.message || 'İşlem başarılı!').addClass('alert alert-success');
+                            toastr.success(response.message || 'Veriler içe aktarıldı.');
+                            $form[0].reset();
+
+                            let containerElement = $form.closest('.modal')[0] || $form.closest('.offcanvas')[0];
+                            if (containerElement) {
+                                let bsInstance = containerElement.classList.contains('modal') ? bootstrap.Modal.getInstance(containerElement) : bootstrap.Offcanvas.getInstance(containerElement);
+                                if (bsInstance) bsInstance.hide();
+                            }
+
+                            if (response.redirectUrl) {
+                                window.location.href = response.redirectUrl;
+                            }
+                        } else {
+                            $msgDiv.text(response.message || 'İşlem başarısız.').addClass('alert alert-danger');
+                            toastr.error(response.message || 'İçe aktarma hatası.');
+                            if (response.errors) {
+                                $.each(response.errors, function (key, errors) {
+                                    if (key === '') {
+                                        $msgDiv.append(`<p>${errors.join(', ')}</p>`);
+                                    } else {
+                                        const $errorSpan = $form.find(`span[data-valmsg-for="${key}"]`);
+                                        if ($errorSpan.length) $errorSpan.text(errors.join(', '));
+                                        else $msgDiv.append(`<p>${key}: ${errors.join(', ')}</p>`);
+                                    }
+                                });
+                            }
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('AJAX Form Submit Error:', xhr.status, xhr.statusText, xhr.responseText);
+                        $form.find('.form-message').text(`Sunucu hatası: ${xhr.statusText || 'Bilinmeyen Hata'}. Lütfen tekrar deneyin.`).addClass('alert alert-danger');
+                        toastr.error('Sunucu hatası: ' + (xhr.responseJSON ? xhr.responseJSON.message : xhr.statusText));
+                    }
+                });
+            }
+        });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTabParam = urlParams.get('activeTab');
+            if (activeTabParam) {
+                const tabTrigger = document.querySelector(`#vehicleTabs a[href="#${activeTabParam}Vehicles"]`);
+                if (tabTrigger) new bootstrap.Tab(tabTrigger).show();
+            }
+
+            document.querySelectorAll('#vehicleTabs .nav-link').forEach(link => {
+                link.addEventListener('shown.bs.tab', function (event) {
+                    const activeTabId = event.target.getAttribute('href').replace('#', '').replace('Vehicles', '');
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('activeTab', activeTabId);
+                    currentUrl.searchParams.delete('success');
+                    window.history.pushState({ path: currentUrl.href }, '', currentUrl.href);
+                });
+            });
+
+            const successParam = urlParams.get('success');
+            if (successParam === 'true') {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('success');
+                window.history.replaceState({}, document.title, url.toString());
+            }
+
+            // VehicleListPartial için modal yükleme
+            window.loadModal = function(vehicleId, activeTab) {
+                console.log('[Index] Modal yükleniyor, VehicleID:', vehicleId, 'ActiveTab:', activeTab);
+                $('#aracDetayModal').modal('show');
+                $('#modalDetailContent').load('/Vehicles/GetVehicleDetailsModal?id=' + encodeURIComponent(vehicleId) + '&activeTab=' + encodeURIComponent(activeTab), function(response, status, xhr) {
+                    if (status === 'error') {
+                        console.error('[Index] Modal yükleme hatası:', xhr.status, xhr.statusText);
+                        $('#modalDetailContent').html('<div class="alert alert-danger text-center p-4"><i class="fas fa-exclamation-triangle me-2"></i>Hata: Detaylar yüklenemedi.</div>');
+                    } else {
+                        console.log('[Index] Modal başarıyla yüklendi.');
+                    }
+                });
+            };
+
+            // Dinamik tıklama olayını bağla
+            $(document).on('click', '.vehicle-list-item', function() {
+                var vehicleId = $(this).data('vehicle-id');
+                var activeTab = $(this).data('active-tab');
+                if (vehicleId) {
+                    loadModal(vehicleId, activeTab);
+                } else {
+                    console.error('[Index] vehicleId bulunamadı:', this);
+                }
+            });
+
+            // Arama/sıralama formu submit olayını bağla
+            $(document).on('submit', '[id^="searchForm_"]', function (event) {
+                event.preventDefault();
+                const $form = $(this);
+                const activeTab = $form.attr('id').replace('searchForm_', '');
+                const searchTerm = $form.find(`#inlineFormSearch_${activeTab}`).val();
+                const sortBy = $form.find(`#sort-select_${activeTab}`).val();
+
+                const url = '@Url.Action("Index", "Vehicles")' + '?searchTerm=' + encodeURIComponent(searchTerm) + '&sortBy=' + encodeURIComponent(sortBy) + '&activeTab=' + encodeURIComponent(activeTab);
+                window.location.href = url;
+            });
+        });
+    </script>
+    <script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        $(document).ready(function() {
+                console.log('[Index] Document ready: Scriptler yüklendi.');
+
+                // Modal açma ve AracID atama
+                $(document).on('click', '.vehicle-item', function() {
+                    var vehicleId = $(this).data('id');
+                    console.log('[Index] Modal yükleniyor, VehicleID:', vehicleId, 'ActiveTab:', 'rented');
+                    $.get('/Vehicles/GetVehicleDetailsModal?id=' + vehicleId)
+                        .done(function(data) {
+                            $('#vehicleModal').html(data);
+                            $('#vehicleModal').modal('show');
+                            // Modal yüklendikten sonra AracID'yi ata
+                            $(document).ajaxComplete(function() {
+                                var $vehicleAracId = $('#vehicleAracId');
+                                if ($vehicleAracId.length) {
+                                    $vehicleAracId.val(vehicleId);
+                                    console.log('[Index] Modal yüklendi, AracID atandı:', $vehicleAracId.val());
+                                } else {
+                                    console.error('[Index] Hata: #vehicleAracId elementi bulunamadı. HTML:', $('#vehicleModal').html());
+                                }
+                                $(document).off('ajaxComplete'); // Tek seferlik kullanım
+                            });
+                        })
+                        .fail(function(xhr, status, error) {
+                            console.error('[Index] Modal yükleme hatası:', status, error, xhr.responseText);
+                        });
+                });
+
+                // Form submit eventi (dinamik olarak bağla)
+                $(document).on('submit', '#updateVehicleForm', function(event) {
+                    event.preventDefault();
+                    console.log('Form submit tetiklendi');
+                    var $form = $(this);
+
+                    // jQuery Validate ile doğrulama
+                    if (!$form.valid()) {
+                        console.log('Form geçersiz, hata mesajları:', $form.validate().errorList);
+                        return;
+                    }
+
+                    var formData = new FormData(this);
+
+                    // AracID'yi manuel ekle ve kontrol et
+                    var $vehicleAracId = $('#vehicleAracId');
+                    var aracId = $vehicleAracId.val();
+                    if (!aracId) {
+                        console.error('Hata: AracID alınamadı. Element:', $vehicleAracId.length ? 'Bulundu' : 'Bulunamadı', 'Değer:', $vehicleAracId.val(), 'Form HTML:', $form.html());
+                        $('#updateResult').text('Araç ID’si alınamadı, lütfen sayfayı yenileyin.');
+                        return;
+                    }
+                    formData.set('AracID', aracId);
+                    console.log('Submitted AracID:', aracId);
+                    console.log('AracID from FormData:', formData.get('AracID'));
+
+                    // Gönderilen verileri logla
+                    for (var pair of formData.entries()) {
+                        console.log(pair[0] + ': ' + pair[1]);
+                    }
+
+                    $.ajax({
+                        url: $form.attr('action'),
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function(response) {
+                            console.log('AJAX success:', response);
+                            if (response.success) {
+                                alert(response.message);
+                                window.location.href = response.redirectUrl;
+                            } else {
+                                $('#updateResult').text(response.message || 'Bilinmeyen bir hata oluştu.');
+                                if (response.errors) {
+                                    response.errors.forEach(function(error) {
+                                        $('#updateResult').append('<div>' + error + '</div>');
+                                    });
+                                }
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('AJAX error:', xhr.status, xhr.responseText);
+                            $('#updateResult').text('Hata: ' + (xhr.responseText || error));
+                        }
+                    });
+                });
+            });
+    </script>
+}

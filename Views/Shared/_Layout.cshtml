@@ -1,0 +1,146 @@
+﻿@{
+    var user = ViewBag.User;
+    var firstName = ViewBag.FirstName?.ToString() ?? "Guest";
+    var themePreference = user?.GetType().GetProperty("ThemePreference")?.GetValue(user)?.ToString() ?? "light";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>RMS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta content="RMS - Kiralama Takip Sistemi." name="description" />
+    <meta content="" name="author" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <link rel="shortcut icon" href="~/images/favicon.ico">
+    @RenderSection("Styles", false)
+    <link href="~/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/icons.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/metisMenu.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/app.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/lib/daterangepicker/daterangepicker.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="~/lib/toastr.js/toastr.min.js" />
+    <style>
+        body.light {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        body.dark {
+            background-color: #343a40;
+            color: #f8f9fa;
+        }
+        body.dark .card {
+            background-color: #495057;
+        }
+        body.dark .navbar-custom {
+            background-color: #212529;
+        }
+    </style>
+</head>
+<body class="@(ViewBag.User?.ThemePreference ?? "light")">
+    <partial name="_Sidebar"></partial>
+    <div class="page-wrapper">
+        <div class="topbar">
+            <nav class="navbar-custom">
+                <ul class="list-unstyled topbar-nav float-end mb-0">
+                    <li class="dropdown hide-phone">
+                        <a class="nav-link dropdown-toggle arrow-none waves-light waves-effect" data-bs-toggle="dropdown" href="#" role="button"
+                           aria-haspopup="false" aria-expanded="false">
+                            <i data-feather="search" class="topbar-icon"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end dropdown-lg p-0">
+                            <div class="app-search-topbar">
+                                <form action="#" method="get">
+                                    <input type="search" name="search" class="from-control top-search mb-0" placeholder="Aratma..">
+                                    <button type="submit"><i class="ti-search"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="dropdown notification-list">
+                        <a class="nav-link dropdown-toggle arrow-none waves-light waves-effect" data-bs-toggle="dropdown" href="#" role="button"
+                           aria-haspopup="false" aria-expanded="false">
+                            <i data-feather="bell" class="align-self-center topbar-icon"></i>
+                            <span class="badge bg-danger rounded-pill noti-icon-badge">2</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end dropdown-lg pt-0">
+                            <h6 class="dropdown-item-text font-15 m-0 py-3 border-bottom d-flex justify-content-between align-items-center">
+                                Bildirimler <span class="badge bg-primary rounded-pill">2</span>
+                            </h6>
+                            <div class="notification-menu" data-simplebar>
+                                <a href="#" class="dropdown-item py-3">
+                                    <small class="float-end text-muted ps-2">2 min ago</small>
+                                    <div class="media">
+                                        <div class="avatar-md bg-soft-primary">
+                                            <i data-feather="shopping-cart" class="align-self-center icon-xs"></i>
+                                        </div>
+                                        <div class="media-body align-self-center ms-2 text-truncate">
+                                            <h6 class="my-0 fw-normal text-dark">Your order is placed</h6>
+                                            <small class="text-muted mb-0">Dummy text of the printing and industry.</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <!-- Diğer bildirimler -->
+                            </div>
+                            <a href="javascript:void(0);" class="dropdown-item text-center text-primary">
+                                View all <i class="fi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </li>
+                    <li class="dropdown">
+                        <a class="nav-link dropdown-toggle waves-effect waves-light nav-user" data-bs-toggle="dropdown" href="#" role="button"
+                           aria-haspopup="false" aria-expanded="false">
+                            <span class="ms-1 nav-user-name hidden-sm">@ViewBag.FirstName</span>
+                            <img src="@(ViewBag.User?.ProfilePicturePath ?? "~/images/users/default-user.jpg")" alt="profile-user" class="rounded-circle thumb-xs" />
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" asp-controller="Account" asp-action="Profile"><i data-feather="user" class="align-self-center icon-xs icon-dual me-1"></i> Profil</a>
+                            <a class="dropdown-item" asp-controller="Account" asp-action="Settings"><i data-feather="settings" class="align-self-center icon-xs icon-dual me-1"></i> Ayarlar</a>
+                            <div class="dropdown-divider mb-0"></div>
+                            <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" id="logoutForm">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="dropdown-item">
+                                    <i data-feather="power" class="align-self-center icon-xs icon-dual me-1"></i> Çıkış Yap
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                </ul>
+                <ul class="list-unstyled topbar-nav mb-0">
+                    <li>
+                        <button class="nav-link button-menu-mobile">
+                            <i data-feather="menu" class="align-self-center topbar-icon"></i>
+                        </button>
+                    </li>
+                    <li class="creat-btn">
+                        <div class="nav-link">
+                            <a class=" btn btn-sm btn-soft-primary" asp-controller="Vehicles" asp-action="Index" role="button"><i class="fas fa-plus me-2"></i>Araçlar</a>
+                            <a class=" btn btn-sm btn-soft-success" asp-controller="Customers" asp-action="Index"><i class="fas fa-plus me-2"></i>Müşteriler</a>
+                            <a class=" btn btn-sm btn-soft-info" href="#" role="button"><i class="fas fa-plus me-2"></i>Faturalar</a>
+                            <a class=" btn btn-sm btn-soft-warning" asp-controller="Parameters" asp-action="Index" role="button"><i class="fas fa-plus me-2"></i>Parametreler</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <div class="page-content">
+            @RenderBody()
+            <partial name="_Footer"></partial>
+        </div>
+    </div>
+    <script src="~/lib/jquery/jquery.js"></script>
+    <script src="~/lib/jquery-validate/jquery.validate.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"></script>
+    <script src="~/lib/toastr.js/toastr.min.js"></script>
+    <script src="~/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/metismenu.min.js"></script>
+    <script src="~/js/waves.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="~/js/simplebar.min.js"></script>
+    <script src="~/js/moment.js"></script>
+    <script src="~/lib/daterangepicker/daterangepicker.js"></script>
+    <script src="~/js/app.js"></script>
+    @RenderSection("Scripts", false)
+</body>
+</html>

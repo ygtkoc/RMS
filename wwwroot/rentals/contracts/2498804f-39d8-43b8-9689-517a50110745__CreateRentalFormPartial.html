@@ -1,0 +1,203 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script>
+@model Dastone.Models.Rental
+
+<form id="createRentalForm" asp-action="CreateRental" asp-controller="Vehicles" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <div class="mb-3 position-relative">
+        <label for="vehicleSearch" class="form-label">Araç</label>
+        <input type="text" id="vehicleSearch" class="form-control" placeholder="Araç ara (Marka, Model, Plaka)..." data-id="vehicleId" autocomplete="off" />
+        <input type="hidden" asp-for="AracID" id="vehicleId" />
+        <div id="vehicleSuggestions" class="list-group mt-1" style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; display: none; position: absolute; width: 100%; z-index: 1000; background: #fff;"></div>
+        <span asp-validation-for="AracID" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3 position-relative">
+        <label for="customerSearch" class="form-label">Müşteri</label>
+        <input type="text" id="customerSearch" class="form-control" placeholder="Müşteri ara (Ad, Soyad, Kimlik No)..." data-id="customerId" autocomplete="off" />
+        <input type="hidden" asp-for="MusteriID" id="customerId" />
+        <div id="customerSuggestions" class="list-group mt-1" style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; display: none; position: absolute; width: 100%; z-index: 1000; background: #fff;"></div>
+        <span asp-validation-for="MusteriID" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="BaslangicTarihi" class="form-label">Başlangıç Tarihi</label>
+        <input asp-for="BaslangicTarihi" type="date" class="form-control" />
+        <span asp-validation-for="BaslangicTarihi" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="BitisTarihi" class="form-label">Bitiş Tarihi</label>
+        <input asp-for="BitisTarihi" type="date" class="form-control" />
+        <span asp-validation-for="BitisTarihi" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="KiralamaSozlesmeleri" class="form-label">Kiralama Sözleşmeleri</label>
+        <input type="file" id="KiralamaSozlesmeleri" name="KiralamaSozlesmeleriDosyalari" multiple class="form-control" />
+        <small class="form-text text-muted">Birden fazla sözleşme dosyası seçebilirsiniz.</small>
+        <span class="text-danger" data-valmsg-for="KiralamaSozlesmeleriDosyalari"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary" id="submitRentalForm">Kiralama Oluştur</button>
+    <div id="formMessageRental" class="mt-3"></div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            // Form validasyonunu sıfırla ve yeniden başlat
+            $('#createRentalForm').removeData('validator').removeData('unobtrusiveValidation');
+            $.validator.unobtrusive.parse('#createRentalForm');
+
+            // Razor ile verileri JavaScript array’ine yaz
+            var vehicles = [
+                @foreach (var vehicle in (ViewBag.Vehicles ?? new List<dynamic>()))
+                {
+                    @: { id: @vehicle.Id, text: '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(vehicle.Text))' },
+                }
+            ];
+            var customers = [
+                @foreach (var customer in (ViewBag.Customers ?? new List<dynamic>()))
+                {
+                    @: { id: @customer.Id, text: '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(customer.Text))' },
+                }
+            ];
+
+            // Hata ayıklama için loglar
+            console.log('Vehicles:', vehicles);
+            console.log('Customers:', customers);
+
+            // Arama fonksiyonu
+            function setupSearch(inputId, suggestionsId, hiddenId, data) {
+                var $input = $(inputId);
+                var $suggestions = $(suggestionsId);
+                var $hidden = $(hiddenId);
+
+                $input.on('input', function () {
+                    var query = $(this).val().toLowerCase().trim();
+                    $suggestions.empty().hide();
+
+                    console.log('Search Query:', query); // Debug
+
+                    if (query.length >= 2) {
+                        var filtered = data.filter(function (item) {
+                            return item.text && item.text.toLowerCase().includes(query);
+                        });
+
+                        console.log('Filtered Items:', filtered); // Debug
+
+                        if (filtered.length > 0) {
+                            filtered.forEach(function (item) {
+                                $('<div>')
+                                    .addClass('list-group-item list-group-item-action')
+                                    .text(item.text)
+                                    .attr('data-id', item.id)
+                                    .css('cursor', 'pointer')
+                                    .on('click', function () {
+                                        $input.val(item.text);
+                                        $hidden.val(item.id);
+                                        $suggestions.empty().hide();
+                                        console.log('Selected Item:', { id: item.id, text: item.text }); // Debug
+                                    })
+                                    .appendTo($suggestions);
+                            });
+                            $suggestions.show();
+                        } else {
+                            $suggestions.html('<div class="list-group-item text-muted">Eşleşen sonuç bulunamadı</div>').show();
+                        }
+                    }
+                });
+
+                // Input dışına tıklayınca önerileri kapat
+                $(document).on('click', function (e) {
+                    if (!$(e.target).closest(inputId).length && !$(e.target).closest(suggestionsId).length) {
+                        $suggestions.empty().hide();
+                        console.log('Suggestions closed'); // Debug
+                    }
+                });
+
+                // Focus olunca önerileri temizle
+                $input.on('focus', function () {
+                    $suggestions.empty().hide();
+                    console.log('Input focused, suggestions cleared'); // Debug
+                });
+            }
+
+            // Verilerin yüklendiğini kontrol et
+            if (!vehicles.length) {
+                $('#vehicleSuggestions').html('<div class="list-group-item text-danger">Araç verileri yüklenemedi.</div>').show();
+                console.warn('No vehicles data available');
+            } else {
+                setupSearch('#vehicleSearch', '#vehicleSuggestions', '#vehicleId', vehicles);
+            }
+
+            if (!customers.length) {
+                $('#customerSuggestions').html('<div class="list-group-item text-danger">Müşteri verileri yüklenemedi.</div>').show();
+                console.warn('No customers data available');
+            } else {
+                setupSearch('#customerSearch', '#customerSuggestions', '#customerId', customers);
+            }
+
+            // Tarih validasyonu
+            var today = new Date().toISOString().split('T')[0];
+            $('#BaslangicTarihi').attr('min', today).on('change', function () {
+                var startDate = $(this).val();
+                $('#BitisTarihi').attr('min', startDate || today);
+                console.log('Start Date Changed:', startDate); // Debug
+            });
+
+            // Offcanvas açıldığında formu yeniden bağla
+            $('#newRentalOffcanvas').on('shown.bs.offcanvas', function () {
+                $.validator.unobtrusive.parse('#createRentalForm');
+                console.log('Offcanvas shown, form re-parsed'); // Debug
+                // Yeniden bağlama için setupSearch'ü tekrar çağır
+                if (vehicles.length) {
+                    setupSearch('#vehicleSearch', '#vehicleSuggestions', '#vehicleId', vehicles);
+                }
+                if (customers.length) {
+                    setupSearch('#customerSearch', '#customerSuggestions', '#customerId', customers);
+                }
+            });
+        });
+    </script>
+}

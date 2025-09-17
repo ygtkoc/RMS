@@ -1,0 +1,18 @@
+﻿@*@model Dastone.Models.User
+
+<form id="deleteUserForm" asp-action="DeleteUser" asp-controller="Parameters" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="UserID" />
+
+    <div class="alert alert-warning" role="alert">
+        <strong>Emin misiniz?</strong> Bu kullanıcıyı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+        <br /><br />
+        Kullanıcı Adı: <strong>@Model.Username</strong> <br />
+        Adı Soyadı: <strong>@Model.FirstName @Model.LastName</strong> <br />
+        E-posta: <strong>@Model.Email</strong>
+    </div>
+
+    <button type="submit" class="btn btn-danger" id="submitDeleteUserForm">Evet, Sil</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">İptal</button>
+    <div id="formMessageDeleteUser" class="mt-3 form-message"></div>
+</form>*@

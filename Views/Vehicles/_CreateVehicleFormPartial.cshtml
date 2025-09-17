@@ -1,0 +1,104 @@
+﻿@model Dastone.Models.Vehicle
+
+<form id="createVehicleForm" asp-action="Create" asp-controller="Vehicles" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label for="plate" class="form-label">Plaka</label>
+        <input type="text" class="form-control" id="plate" name="Plaka" value="@Model.Plaka" required>
+        <span asp-validation-for="Plaka" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="chassisNumber" class="form-label">Şase Numarası</label>
+        <input type="text" class="form-control" id="chassisNumber" name="SaseNo" value="@Model.SaseNo" required>
+        <span asp-validation-for="SaseNo" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="description" class="form-label">Açıklama</label>
+        <textarea class="form-control" id="description" name="Aciklama" rows="3">@Model.Aciklama</textarea>
+        <span asp-validation-for="Aciklama" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="brand" class="form-label">Marka</label>
+        <input type="text" class="form-control" id="brand" name="Marka" value="@Model.Marka" required>
+        <span asp-validation-for="Marka" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="model" class="form-label">Model</label>
+        <input type="text" class="form-control" id="model" name="Model" value="@Model.Model" required>
+        <span asp-validation-for="Model" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="modelYear" class="form-label">Model Yılı</label>
+        <input type="number" class="form-control" id="modelYear" name="ModelYili" value="@Model.ModelYili" required>
+        <span asp-validation-for="ModelYili" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="fuelType" class="form-label">Yakıt Tipi</label>
+        <input type="text" class="form-control" id="fuelType" name="YakitTipi" value="@Model.YakitTipi" required>
+        <span asp-validation-for="YakitTipi" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="shiftType" class="form-label">Vites Tipi</label>
+        <input type="text" class="form-control" id="shiftType" name="VitesTipi" value="@Model.VitesTipi" required>
+        <span asp-validation-for="VitesTipi" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="kmSayac" class="form-label">Kilometre Bilgisi</label>
+        <input type="number" class="form-control" id="kmBilgi" name="KMBilgi" value="@Model.KMBilgi" required>
+        <span asp-validation-for="KMBilgi" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="cekisTipi" class="form-label">Çekiş Tipi</label>
+        <input type="text" class="form-control" id="cekisTipi" name="CekisTipi" value="@Model.CekisTipi" required>
+        <span asp-validation-for="CekisTipi" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="renk" class="form-label">Renk</label>
+        <input type="text" class="form-control" id="renk" name="renk" value="@Model.Renk" required>
+        <span
+            asp-validation-for="Renk" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="enginePower" class="form-label">Motor Gücü</label>
+        <input type="text" class="form-control" id="enginePower" name="Motor Gücü" value="@Model.MotorGucu" required>
+        <span asp-validation-for="MotorGucu" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="carType" class="form-label">Araç Tipi</label>
+        <select class="form-select" id="carType" asp-for="AracTipiID" asp-items="ViewBag.AracTipiTanimi" required>
+            <option value="">Araç Tipi Seçiniz.</option>
+        </select>
+        <span asp-validation-for="AracTipiID" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="location" class="form-label">Lokasyon</label>
+        <select class="form-select" id="location" asp-for="LokasyonID" asp-items="ViewBag.Lokasyonlar" required>
+            <option value="">Lütfen Bir Lokasyon Seçin</option>
+        </select>
+        <span asp-validation-for="LokasyonID" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="trafficInsuranceStartDate" class="form-label">Trafik Sigortası Başlangıç Tarihi</label>
+        <input type="date" class="form-control" id="trafficInsuranceStartDate" name="TrafikBaslangicTarihi" value="@(Model.TrafikBaslangicTarihi?.ToString("yyyy-MM-dd"))">
+        <span asp-validation-for="TrafikBaslangicTarihi" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="trafficInsuranceEndDate" class="form-label">Trafik Sigortası Bitiş Tarihi</label>
+        <input type="date" class="form-control" id="trafficInsuranceEndDate" name="TrafikBitisTarihi" value="@(Model.TrafikBitisTarihi?.ToString("yyyy-MM-dd"))">
+        <span asp-validation-for="TrafikBitisTarihi" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="cascoInsuranceStartDate" class="form-label">Kasko Sigortası Başlangıç Tarihi</label>
+        <input type="date" class="form-control" id="cascoInsuranceStartDate" name="KaskoBaslangicTarihi" value="@(Model.KaskoBaslangicTarihi?.ToString("yyyy-MM-dd"))">
+        <span asp-validation-for="KaskoBaslangicTarihi" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label for="cascoInsuranceEndDate" class="form-label">Kasko Sigortası Bitiş Tarihi</label>
+        <input type="date" class="form-control" id="cascoInsuranceEndDate" name="KaskoBitisTarihi" value="@(Model.KaskoBitisTarihi?.ToString("yyyy-MM-dd"))">
+        <span asp-validation-for="KaskoBitisTarihi" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary" id="submitVehicleForm">Araç Ekle</button>
+    <div id="formMessage" class="mt-3"></div>
+</form>
+

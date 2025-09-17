@@ -1,0 +1,76 @@
+﻿@model Dastone.Models.Lokasyon
+
+<div class="modal-dialog">
+    <div class="modal-content">
+        <form id="createLocationForm" method="post" action="@Url.Action("CreateLocation","Parameters")">
+            @Html.AntiForgeryToken()
+
+            <div class="modal-header">
+                <h5 class="modal-title">Lokasyon Tanımı Oluştur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Lokasyon Adı <span class="text-danger">*</span></label>
+                    <input asp-for="LokasyonAdi" class="form-control" />
+                    <span asp-validation-for="LokasyonAdi" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Açıklama</label>
+                    <textarea asp-for="Aciklama" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Aciklama" class="text-danger"></span>
+                </div>
+
+                <div id="createLocationErrors" class="text-danger small"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Kapat</button>
+                <button type="submit" class="btn btn-primary">Oluştur</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function(){
+            $("#createLocationForm").on("submit", function(e){
+                e.preventDefault();
+                const $form = $(this);
+                const data = $form.serialize();
+
+                $.post($form.attr("action"), data, function(resp){
+                    if(resp && resp.success){
+                        // başarı -> modalı kapat + listeyi yenile
+                        $("#createLocationModal").modal("hide");
+                        if (window.loadLocations) {
+                            // mevcut arama & sayfaya dokunmadan en başa dön
+                            window.loadLocations(1, 20, $("#locationSearchInput").val() || "");
+                        }
+                    } else {
+                        // hataları göster
+                        const $errors = $("#createLocationErrors").empty();
+                        if(resp && resp.errors){
+                            let html = "<ul class='mb-0'>";
+                            for (const key in resp.errors){
+                                (resp.errors[key] || []).forEach(function(msg){
+                                    html += `<li>${msg}</li>`;
+                                });
+                            }
+                            html += "</ul>";
+                            $errors.html(html);
+                        } else {
+                            $errors.text(resp.message || "Bilinmeyen bir hata oluştu.");
+                        }
+                    }
+                }).fail(function(xhr){
+                    $("#createLocationErrors").text("İstek sırasında bir hata oluştu: " + (xhr.responseText || xhr.statusText));
+                });
+            });
+        })();
+    </script>
+}

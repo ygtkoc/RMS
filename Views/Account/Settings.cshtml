@@ -1,0 +1,149 @@
+﻿@{
+    ViewData["Title"] = "Ayarlar";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="page-content">
+    <div class="container-fluid">
+        <h4 class="mt-0 mb-3">Ayarlar</h4>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Bildirim Tercihleri</h5>
+                        <form id="settingsForm" asp-action="Settings" asp-controller="Account" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="receiveEmailNotifications" name="receiveEmailNotifications" @(ViewBag.Settings.ReceiveEmailNotifications ? "checked" : "")>
+                                <label class="form-check-label" for="receiveEmailNotifications">E-posta Bildirimleri</label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="receiveSMSNotifications" name="receiveSMSNotifications" @(ViewBag.Settings.ReceiveSMSNotifications ? "checked" : "")>
+                                <label class="form-check-label" for="receiveSMSNotifications">SMS Bildirimleri</label>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="preferredLanguage">Dil Tercihi</label>
+                                <select class="form-control" id="preferredLanguage" name="preferredLanguage">
+                                    @if (ViewBag.Settings.PreferredLanguage == "tr")
+                                    {
+                                        <option value="tr" selected>Türkçe</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="tr">Türkçe</option>
+                                    }
+                                    @if (ViewBag.Settings.PreferredLanguage == "en")
+                                    {
+                                        <option value="en" selected>English</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="en">English</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="themePreference">Tema Tercihi</label>
+                                <select class="form-control" id="themePreference" name="themePreference">
+                                    @if (ViewBag.Settings.ThemePreference == "light")
+                                    {
+                                        <option value="light" selected>Açık Tema</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="light">Açık Tema</option>
+                                    }
+                                    @if (ViewBag.Settings.ThemePreference == "dark")
+                                    {
+                                        <option value="dark" selected>Koyu Tema</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="dark">Koyu Tema</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="sessionTimeoutMinutes">Oturum Süresi (dakika)</label>
+                                <select class="form-control" id="sessionTimeoutMinutes" name="sessionTimeoutMinutes">
+                                    @if (ViewBag.Settings.SessionTimeoutMinutes == 15)
+                                    {
+                                        <option value="15" selected>15 Dakika</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="15">15 Dakika</option>
+                                    }
+                                    @if (ViewBag.Settings.SessionTimeoutMinutes == 30)
+                                    {
+                                        <option value="30" selected>30 Dakika</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="30">30 Dakika</option>
+                                    }
+                                    @if (ViewBag.Settings.SessionTimeoutMinutes == 60)
+                                    {
+                                        <option value="60" selected>1 Saat</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="60">1 Saat</option>
+                                    }
+                                    @if (ViewBag.Settings.SessionTimeoutMinutes == 120)
+                                    {
+                                        <option value="120" selected>2 Saat</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="120">2 Saat</option>
+                                    }
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Ayarları Kaydet</button>
+                        </form>
+                        <div class="alert alert-success d-none mt-3" id="settingsMessage"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Ayarlar Formu Gönderimi
+            $('#settingsForm').on('submit', function (e) {
+                e.preventDefault();
+                $('#settingsMessage').addClass('d-none').text('');
+
+                $.ajax({
+                    url: '@Url.Action("Settings", "Account")',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                    success: function (response) {
+                        if (response.success) {
+                            $('#settingsMessage').removeClass('d-none').addClass('alert-success').removeClass('alert-danger').text(response.message);
+                            // Tema değişimini anında uygula
+                            if (response.themePreference) {
+                                $('body').removeClass('light dark').addClass(response.themePreference);
+                            }
+                        } else {
+                            $('#settingsMessage').removeClass('d-none').addClass('alert-danger').removeClass('alert-success').text(response.message);
+                        }
+                    },
+                    error: function (xhr) {
+                        $('#settingsMessage').removeClass('d-none').addClass('alert-danger').removeClass('alert-success').text('Hata oluştu: ' + (xhr.responseJSON?.message || 'Sunucu hatası'));
+                    }
+                });
+            });
+
+            // Tema değişimini anında önizleme
+            $('#themePreference').on('change', function () {
+                var theme = $(this).val();
+                $('body').removeClass('light dark').addClass(theme);
+            });
+        });
+    </script>
+}

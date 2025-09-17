@@ -1,0 +1,667 @@
+﻿@model Dastone.Models.ParametersDashboardViewModel
+
+@{
+    ViewData["Title"] = "Parametreler";
+}
+
+@section styles {
+    <style>
+        .alert-success, .alert-danger {
+            margin-bottom: 20px;
+        }
+
+        .offcanvas-body form .text-danger:empty {
+            display: none;
+        }
+
+        .list-group-item-action:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="page-title-box">
+                <div class="row">
+                    <div class="col">
+                        <h4 class="page-title">Parametreler</h4>
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="javascript:void(0);">RMS</a></li>
+                            <li class="breadcrumb-item active">Parametreler</li>
+                        </ol>
+                    </div>
+                    <div class="col-auto align-self-center">
+                        <button class="btn btn-sm btn-soft-danger" type="button" data-bs-toggle="offcanvas" data-bs-target="#newPenaltyDefinitionOffcanvas" aria-controls="newPenaltyDefinitionOffcanvas" id="newPenaltyDefinitionBtn">
+                            <i data-feather="plus" class="align-self-center icon-xs me-1"></i> Ceza Tanımı Oluştur
+                        </button>
+                        <button class="btn btn-sm btn-soft-info" type="button" data-bs-toggle="offcanvas" data-bs-target="#newUserOffcanvas" aria-controls="newUserOffcanvas" id="newUserBtn">
+                            <i data-feather="user-plus" class="align-self-center icon-xs me-1"></i> Danışman Oluştur
+                        </button>
+                        <button class="btn btn-sm btn-soft-warning" type="button" data-bs-toggle="offcanvas" data-bs-target="#newCarTypeOffcanvas" aria-controls="newCarTypeOffcanvas" id="newCarTypeBtn">
+                            <i data-feather="plus" class="align-self-center icon-xs me-1"></i> Araç Tipi Tanımı Oluştur
+                        </button>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (ViewContext.HttpContext.Request.Query["success"] == "true")
+    {
+        <div class="alert alert-success alert-dismissible fade show border-0" role="alert">
+            <strong>Başarılı!</strong> @(ViewContext.HttpContext.Request.Query["message"]) 👍
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (ViewContext.HttpContext.Request.Query["success"] == "false")
+    {
+        <div class="alert alert-danger alert-dismissible fade show border-0" role="alert">
+            <strong>Hata!</strong> @(ViewContext.HttpContext.Request.Query["message"]) 👎
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card-body">
+        <ul class="nav nav-tabs" id="parametersTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link @(Model.ActiveTab == "penalty-definitions" ? "active" : "")" id="penalty-definitions-tab" data-bs-toggle="tab" href="#penaltyDefinitions" role="tab" aria-controls="penaltyDefinitions" aria-selected="@(Model.ActiveTab == "penalty-definitions" ? "true" : "false")">
+                    Ceza Tanımları (@Model.TotalPenaltyDefinitionsCount)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(Model.ActiveTab == "user-definitions" ? "active" : "")" id="user-definitions-tab" data-bs-toggle="tab" href="#userDefinitions" role="tab" aria-controls="userDefinitions" aria-selected="@(Model.ActiveTab == "user-definitions" ? "true" : "false")">
+                    Danışman Tanımları (@Model.TotalUsersCount)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(Model.ActiveTab == "cartype-definitions" ? "active" : "")" id="cartype-definitions-tab" data-bs-toggle="tab" href="#carTypeDefinitions" role="tab" aria-controls="carTypeDefinitions" aria-selected="@(Model.ActiveTab == "cartype-definitions" ? "true" : "false")">
+                    Araç Tipi Tanımları (@Model.TotalCarTypeCount)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(Model.ActiveTab == "location-definitions" ? "active" : "")"
+                   data-bs-toggle="tab" href="#tab-location-definitions"
+                   onclick="loadLocationTab()">Lokasyon Tanımları (@Model.TotalLocationsCount)</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="parametersTabsContent">
+            <div class="tab-pane fade @(Model.ActiveTab == "penalty-definitions" ? "show active" : "")" id="penaltyDefinitions" role="tabpanel" aria-labelledby="penalty-definitions-tab">
+                @await Html.PartialAsync("_PenaltyDefinitionListPartial", Model.PenaltyDefinitionsPartial)
+            </div>
+            <div class="tab-pane fade @(Model.ActiveTab == "user-definitions" ? "show active" : "")" id="userDefinitions" role="tabpanel" aria-labelledby="user-definitions-tab">
+                @await Html.PartialAsync("_UserListPartial", Model.UsersPartial)
+            </div>
+            <div class="tab-pane fade @(Model.ActiveTab == "cartype-definitions" ? "show active" : "")" id="carTypeDefinitions" role="tabpanel" aria-labelledby="cartype-definitions-tab">
+                @await Html.PartialAsync("_CarTypeListPartial", Model.CarTypePartial)
+            </div>
+            <div class="tab-pane fade @(Model.ActiveTab == "location-definitions" ? "show active" : "")" id="tab-location-definitions" role="tabpanel" aria-labelledby="location-definitions-tab">                
+                    @await Html.PartialAsync("_LocationListPartial", Model.LocationsPartial)               
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="relatedVehiclesModal" tabindex="-1" aria-labelledby="relatedVehiclesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="relatedVehiclesModalLabel">İlişkili Araçlar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="relatedVehiclesModalBody">
+                    <!-- Dinamik içerik buraya yüklenecek -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="button" class="btn btn-danger" id="continueDeleteBtn">Silme İşlemine Devam Et</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Kullanıcı Detay Modal -->
+    <div class="modal fade" id="userDetailsModal" tabindex="-1" aria-labelledby="userDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userDetailsModalLabel">Kullanıcı Detayları</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="userDetailsModalBody">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Yükleniyor...</span>
+                        </div>
+                        <p class="mt-2">Kullanıcı bilgileri yükleniyor...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="newPenaltyDefinitionOffcanvas" aria-labelledby="newPenaltyDefinitionOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title mt-0" id="newPenaltyDefinitionOffcanvasLabel">Yeni Ceza Tanımı Oluştur</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+        </div>
+        <div class="offcanvas-body"></div>
+    </div>
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="newCarTypeOffcanvas" aria-labelledby="newCarTypeOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title mt-0" id="newCarTypeOffcanvasLabel">Yeni Araç Tipi Tanımı Oluştur</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+        </div>
+        <div class="offcanvas-body"></div>
+    </div>
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="newUserOffcanvas" aria-labelledby="newUserOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title mt-0" id="newUserOffcanvasLabel">Yeni Kullanıcı Oluştur</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+        </div>
+        <div class="offcanvas-body"></div>
+    </div>
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="deleteUserOffcanvas" aria-labelledby="deleteUserOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title mt-0" id="deleteUserOffcanvasLabel">Kullanıcı Sil</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+        </div>
+        <div class="offcanvas-body"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            console.log('Parameters/Index.cshtml Scripts loaded');
+
+            // Offcanvas form yükleme
+            function loadOffcanvasForm(offcanvasId, url, itemId = null) {
+                console.log(`Loading offcanvas: ${offcanvasId}, URL: ${url}, ItemID: ${itemId}`);
+                const offcanvasElement = document.getElementById(offcanvasId);
+                if (!offcanvasElement) {
+                    console.error(`Offcanvas ${offcanvasId} bulunamadı!`);
+                    return;
+                }
+                const $offcanvasBody = $(`#${offcanvasId} .offcanvas-body`);
+                $offcanvasBody.html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>');
+                let requestUrl = url;
+                if (itemId) {
+                    requestUrl += `?id=${itemId}`;
+                }
+                $.ajax({
+                    url: requestUrl,
+                    type: 'GET',
+                    success: function (data) {
+                        $offcanvasBody.html(data);
+                        $.validator.unobtrusive.parse($offcanvasBody.find('form'));
+                        new bootstrap.Offcanvas(offcanvasElement).show();
+                        console.log(`Offcanvas ${offcanvasId} başarıyla yüklendi.`);
+                    },
+                    error: function (xhr) {
+                        $offcanvasBody.html(`<div class="alert alert-danger">Form yüklenemedi: ${xhr.statusText}</div>`);
+                        console.error(`AJAX Error for ${offcanvasId}:`, xhr.status, xhr.statusText, xhr.responseText);
+                    }
+                });
+            }
+
+            // Offcanvas buton bağlamaları
+            $('#newPenaltyDefinitionBtn').on('click', function() {
+                loadOffcanvasForm('newPenaltyDefinitionOffcanvas', '@Url.Action("CreatePenaltyDefinitionFormPartial", "Parameters")');
+            });
+            $('#newUserBtn').on('click', function() {
+                loadOffcanvasForm('newUserOffcanvas', '@Url.Action("CreateUserFormPartial", "Parameters")');
+            });
+            $('#newCarTypeBtn').on('click', function() {
+                loadOffcanvasForm('newCarTypeOffcanvas', '@Url.Action("CreateCarTypeFormPartial", "Parameters")');
+            });
+
+            // Ceza Tanımı Silme
+            $(document).on('click', '.delete-penalty-definition-btn', function(e) {
+                e.preventDefault();
+                const penaltyDefId = $(this).data('penalty-def-id');
+                console.log('Ceza Tanımı Sil butonu tıklandı, ID:', penaltyDefId);
+                if (penaltyDefId && confirm('Bu ceza tanımını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+                    $.ajax({
+                        url: '@Url.Action("DeletePenaltyDefinition", "Parameters")',
+                        type: 'POST',
+                        data: { id: penaltyDefId },
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                toastr.success(response.message || 'Ceza tanımı başarıyla silindi.');
+                                loadPenaltyDefinitionList(1, '');
+                            } else {
+                                toastr.error(response.message || 'Silme işleminde hata oluştu.');
+                                console.error('Silme hatası:', response.message);
+                            }
+                        },
+                        error: function (xhr) {
+                            toastr.error('Sunucu hatası: ' + (xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : xhr.statusText));
+                            console.error('AJAX Error:', xhr.status, xhr.statusText, xhr.responseText);
+                        }
+                    });
+                } else if (!penaltyDefId) {
+                    console.error('Sil butonu için Penalty Definition ID bulunamadı.');
+                }
+            });
+
+            // Kullanıcı Modal Yükleme
+            function loadUserModalContent(id) {
+                console.log(`Loading user modal content, ID: ${id}`);
+                const $modalBody = $('#userDetailsModalBody');
+                $modalBody.html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div><p class="mt-2">Kullanıcı bilgileri yükleniyor...</p></div>');
+
+                const modalUrl = '@Url.Action("GetUserDetailsModalPartial", "Parameters")' + '?id=' + id;
+                $.ajax({
+                    url: modalUrl,
+                    type: 'GET',
+                    success: function (data) {
+                        $modalBody.html(data);
+                        $.validator.unobtrusive.parse($modalBody);
+                        $('#userDetailsModal').modal('show');
+                        $('#userDetailsModal a[href="#userGeneralInfoTab"]').tab('show');
+                        console.log('Kullanıcı modal içeriği yüklendi başarıyla.');
+                    },
+                    error: function (xhr) {
+                        $modalBody.html(`<div class="alert alert-danger">Modal içeriği yüklenemedi: ${xhr.statusText}</div>`);
+                        console.error('Kullanıcı modal yükleme hatası:', xhr.status, xhr.statusText, xhr.responseText);
+                    }
+                });
+            }
+
+            // Kullanıcı Satır Tıklama
+            $(document).on('click', '.user-row', function(e) {
+                e.preventDefault();
+                const userId = $(this).data('user-id');
+                console.log('Kullanıcı Satır tıklandı, ID:', userId);
+                if (userId) {
+                    loadUserModalContent(userId);
+                } else {
+                    console.error('Satır tıklama için User ID bulunamadı.');
+                }
+            });
+
+            // Kullanıcı Silme
+            $(document).on('click', '.delete-user-btn', function(e) {
+                e.preventDefault();
+                const userId = $(this).data('user-id');
+                console.log('Kullanıcı Sil butonu tıklandı, ID:', userId);
+                if (userId && confirm('Bu kullanıcıyı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteUser", "Parameters")',
+                        type: 'POST',
+                        data: { id: userId },
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                toastr.success(response.message || 'Kullanıcı başarıyla silindi.');
+                                loadUserList(1, '');
+                            } else {
+                                toastr.error(response.message || 'Silme işleminde hata oluştu.');
+                                console.error('Silme hatası:', response.message);
+                            }
+                        },
+                        error: function (xhr) {
+                            toastr.error('Sunucu hatası: ' + (xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : xhr.statusText));
+                            console.error('AJAX Error:', xhr.status, xhr.statusText, xhr.responseText);
+                        }
+                    });
+                } else if (!userId) {
+                    console.error('Sil butonu için User ID bulunamadı.');
+                }
+            });
+
+                         $(document).on('click', '.delete-car-type', function(e) {
+            e.preventDefault();
+            const carTypeId = $(this).data('id');
+            if (carTypeId && confirm('Bu araç tipini silmek istediğinize emin misiniz?')) {
+                $.ajax({
+                    url: '@Url.Action("DeleteCarType", "Parameters")',
+                    type: 'POST',
+                    data: { id: carTypeId },
+                    headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                    success: function (response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            loadCarTypeList(1, '');
+                        } else if (response.hasRelated) {
+                            // Modalı aç ve içeriği yükle
+                            loadRelatedVehiclesModal(carTypeId);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function (xhr) {
+                        toastr.error('Sunucu hatası: ' + xhr.statusText);
+                    }
+                });
+            }
+        });
+
+        // Yeni: Modal içeriğini yükle
+        function loadRelatedVehiclesModal(aracTipiId) {
+            const $modalBody = $('#relatedVehiclesModalBody');
+            $modalBody.html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>');
+            $.ajax({
+                url: '@Url.Action("GetRelatedVehiclesPartial", "Parameters")',
+                type: 'GET',
+                data: { aracTipiId: aracTipiId },
+                success: function (data) {
+                    $modalBody.html(data);
+                    $('#relatedVehiclesModal').modal('show');
+                },
+                error: function (xhr) {
+                    $modalBody.html('<div class="alert alert-danger">Yüklenemedi: ' + xhr.statusText + '</div>');
+                }
+            });
+        }
+
+        // Yeni: Değiştir/Sıfırla butonu
+        $(document).on('click', '.update-type-btn', function() {
+            const $row = $(this).closest('tr');
+            const vehicleId = $row.data('vehicle-id');
+            const newTypeId = $row.find('.new-type-select').val() || null;  // Boş ise null (sıfırla)
+
+            $.ajax({
+                url: '@Url.Action("UpdateVehicleType", "Parameters")',
+                type: 'POST',
+                data: { vehicleId: vehicleId, newTypeId: newTypeId },
+                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                success: function (response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        $row.remove();  // Satırı kaldır (artık ilişkili değil)
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function (xhr) {
+                    toastr.error('Güncelleme hatası: ' + xhr.statusText);
+                }
+            });
+        });
+
+        // Yeni: Silme devam butonu (modal footer)
+        $('#continueDeleteBtn').on('click', function() {
+            const remainingRows = $('#relatedVehiclesModalBody table tbody tr').length;
+            if (remainingRows > 0) {
+                toastr.warning('Tüm ilişkili araçlar yönetilmedi. Lütfen devam etmeden önce tamamlayın.');
+                return;
+            }
+            $('#relatedVehiclesModal').modal('hide');
+            // Silme işlemini tekrar dene (artık ilişkili yok)
+            const carTypeId = $('#relatedVehiclesModal').data('arac-tipi-id');  // Modal açılırken set et (aşağıda ekle)
+            // Silme AJAX'ini tekrar çağır
+            $.ajax({
+                url: '@Url.Action("DeleteCarType", "Parameters")',
+                type: 'POST',
+                data: { id: carTypeId },
+                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                success: function (response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        loadCarTypeList(1, '');
+                    } else {
+                        toastr.error(response.message);
+                    }
+                }
+            });
+        });
+
+        // loadRelatedVehiclesModal'e ek: Modal data set et
+        // loadRelatedVehiclesModal fonksiyonunda success içine ekle:
+        $('#relatedVehiclesModal').data('arac-tipi-id', aracTipiId);
+
+            // Araç Tipi Oluşturma Formu Submit
+                   $(document).on('submit', '#createCarType', function(e) {
+            e.preventDefault();
+            const $form = $(this);
+            if (!$form.valid()) {
+                console.log('Araç Tipi Oluştur formu geçersiz, hatalar:', $form.validate().errorList);  // Zaten var
+                return;
+            }
+            $.ajax({
+                url: '@Url.Action("CreateCarType", "Parameters")',
+                type: 'POST',
+                data: $form.serialize(),
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                        success: function (response) {
+                    const $msgDiv = $form.find('.form-message');
+                    if (response.success) {
+                        $msgDiv.text(response.message).addClass('alert alert-success').removeClass('alert-danger');
+                        $form[0].reset();
+                        const offcanvasInstance = bootstrap.Offcanvas.getInstance($form.closest('.offcanvas')[0]);
+                        if (offcanvasInstance) {
+                            offcanvasInstance.hide();
+                            $('.offcanvas-backdrop').remove();
+                        }
+                        // Sayfayı yenile
+                        window.location.reload(); // Tek refresh
+                    } else {
+                        $msgDiv.text(response.message || 'Oluşturma başarısız.').addClass('alert alert-danger').removeClass('alert-success');
+                        if (response.errors) {
+                            $.each(response.errors, function (key, errors) {
+                                const $errorSpan = $form.find(`span[data-valmsg-for="${key}"]`);
+                                if ($errorSpan.length) $errorSpan.text(errors.join(', '));
+                                else $msgDiv.append(`<p>${key}: ${errors.join(', ')}</p>`);
+                            });
+                        }
+                        toastr.error(response.message || 'Oluşturma başarısız.');
+                    }
+                },
+                error: function (xhr) {
+                    $form.find('.form-message').text(`Sunucu hatası: ${xhr.statusText}`).addClass('alert alert-danger');
+                    toastr.error(`Sunucu hatası: ${xhr.statusText}`);
+                    console.error('AJAX Error:', xhr.status, xhr.statusText, xhr.responseText);
+                }
+            });
+        });
+
+            // Kullanıcı Düzenle Formu Submit
+            $(document).on('submit', '#editUserForm', function(e) {
+                e.preventDefault();
+                const $form = $(this);
+                if (!$form.valid()) {
+                    console.log('Form geçersiz, hatalar:', $form.validate().errorList);
+                    return;
+                }
+                $.ajax({
+                    url: '@Url.Action("EditUser", "Parameters")',
+                    type: 'POST',
+                    data: $form.serialize(),
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        const $msgDiv = $form.find('.form-message');
+                        if (response.success) {
+                            $msgDiv.text(response.message).addClass('alert alert-success').removeClass('alert-danger');
+                            toastr.success(response.message);
+                            $('#userDetailsModal').modal('hide');
+                            loadUserList(1, '');
+                        } else {
+                            $msgDiv.text(response.message || 'Güncelleme başarısız.').addClass('alert alert-danger').removeClass('alert-success');
+                            if (response.errors) {
+                                $.each(response.errors, function (key, errors) {
+                                    const $errorSpan = $form.find(`span[data-valmsg-for="${key}"]`);
+                                    if ($errorSpan.length) $errorSpan.text(errors.join(', '));
+                                    else $msgDiv.append(`<p>${key}: ${errors.join(', ')}</p>`);
+                                });
+                            }
+                            toastr.error(response.message || 'Güncelleme başarısız.');
+                        }
+                    },
+                    error: function (xhr) {
+                        $form.find('.form-message').text(`Sunucu hatası: ${xhr.statusText}`).addClass('alert alert-danger');
+                        toastr.error(`Sunucu hatası: ${xhr.statusText}`);
+                        console.error('AJAX Error:', xhr.status, xhr.statusText, xhr.responseText);
+                    }
+                });
+            });
+
+            // Ceza Tanımı Listesi Yükleme
+            function loadPenaltyDefinitionList(page, query) {
+                console.log('Ceza Tanımı listesi yükleniyor, sayfa:', page, 'sorgu:', query);
+                const targetDiv = $('#penaltyDefinitions');
+                $.ajax({
+                    url: '@Url.Action("GetPenaltyDefinitionsForTab", "Parameters")',
+                    type: 'GET',
+                    data: { pageNumber: page, pageSize: 10, searchQuery: query },
+                    success: function (data) {
+                        targetDiv.html(data);
+                        $.validator.unobtrusive.parse(targetDiv);
+                        console.log('Ceza Tanımı listesi başarıyla yüklendi.');
+                    },
+                    error: function (xhr) {
+                        targetDiv.html(`<div class="alert alert-danger">Ceza Tanımları yüklenemedi: ${xhr.statusText}</div>`);
+                        console.error('Ceza Tanımı liste yükleme hatası:', xhr.status, xhr.statusText, xhr.responseText);
+                    }
+                });
+            }
+
+            // Kullanıcı Listesi Yükleme
+            function loadUserList(page, query) {
+                console.log('Kullanıcı listesi yükleniyor, sayfa:', page, 'sorgu:', query);
+                const targetDiv = $('#userDefinitions');
+                $.ajax({
+                    url: '@Url.Action("GetUsersForTab", "Parameters")',
+                    type: 'GET',
+                    data: { pageNumber: page, pageSize: 10, searchQuery: query },
+                    success: function (data) {
+                        targetDiv.html(data);
+                        $.validator.unobtrusive.parse(targetDiv);
+                        console.log('Kullanıcı listesi başarıyla yüklendi.');
+                    },
+                    error: function (xhr) {
+                        targetDiv.html(`<div class="alert alert-danger">Kullanıcılar yüklenemedi: ${xhr.statusText}</div>`);
+                        console.error('Kullanıcı liste yükleme hatası:', xhr.status, xhr.statusText, xhr.responseText);
+                    }
+                });
+            }
+
+            // Araç Tipi Listesi Yükleme
+            function loadCarTypeList(page, query) {
+                console.log('Araç Tipi listesi yükleniyor, sayfa:', page, 'sorgu:', query);
+                const targetDiv = $('#carTypeDefinitions');
+                $.ajax({
+                    url: '@Url.Action("GetCarTypesForTab", "Parameters")',
+                    type: 'GET',
+                    data: { pageNumber: page, pageSize: 10, searchQuery: query },
+                    success: function (data) {
+                        targetDiv.html(data);
+                        $.validator.unobtrusive.parse(targetDiv);
+                        console.log('Araç Tipi listesi başarıyla yüklendi.');
+                    },
+                    error: function (xhr) {
+                        targetDiv.html(`<div class="alert alert-danger">Araç Tipleri yüklenemedi: ${xhr.statusText}</div>`);
+                        console.error('Araç Tipi liste yükleme hatası:', xhr.status, xhr.statusText, xhr.responseText);
+                    }
+                });
+            }
+
+            // Tab yönetimi
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTabParam = urlParams.get('activeTab');
+            if (activeTabParam) {
+                let tabToActivateId = '';
+                if (activeTabParam === "penalty-definitions") tabToActivateId = "penaltyDefinitions";
+                else if (activeTabParam === "user-definitions") tabToActivateId = "userDefinitions";
+                else if (activeTabParam === "cartype-definitions") tabToActivateId = "carTypeDefinitions";
+                if (tabToActivateId) {
+                    console.log('Aktif tab yükleniyor:', tabToActivateId);
+                    const tabTrigger = document.querySelector(`#parametersTabs a[href="#${tabToActivateId}"]`);
+                    if (tabTrigger) new bootstrap.Tab(tabTrigger).show();
+                }
+            } else {
+                const firstTabTrigger = document.querySelector('#parametersTabs .nav-link:first-child');
+                if (firstTabTrigger) new bootstrap.Tab(firstTabTrigger).show();
+            }
+
+            document.querySelectorAll('#parametersTabs .nav-link').forEach(link => {
+                link.addEventListener('shown.bs.tab', function (event) {
+                    const activeTabId = event.target.getAttribute('href').replace('#', '');
+                    const currentUrl = new URL(window.location.href);
+                    let paramValue = '';
+                    if (activeTabId === "penaltyDefinitions") paramValue = "penalty-definitions";
+                    else if (activeTabId === "userDefinitions") paramValue = "user-definitions";
+                    else if (activeTabId === "carTypeDefinitions") paramValue = "cartype-definitions";
+                    currentUrl.searchParams.set('activeTab', paramValue);
+                    if (urlParams.get('success') === 'true') currentUrl.searchParams.set('success', 'true');
+                    if (urlParams.get('message')) currentUrl.searchParams.set('message', urlParams.get('message'));
+                    window.history.pushState({ path: currentUrl.href }, '', currentUrl.href);
+
+                    const currentPage = 1;
+                    const currentSearchQuery = '';
+                    if (activeTabId === "penaltyDefinitions") loadPenaltyDefinitionList(currentPage, currentSearchQuery);
+                    else if (activeTabId === "userDefinitions") loadUserList(currentPage, currentSearchQuery);
+                    else if (activeTabId === "carTypeDefinitions") loadCarTypeList(currentPage, currentSearchQuery);
+                });
+            });
+
+            // Off-canvas kapandığında backdrop'u temizle
+            $('.offcanvas').on('hidden.bs.offcanvas', function () {
+                $('.offcanvas-backdrop').remove();
+            });
+        });
+
+                     function(){
+            const $content = $("#parameters-tab-content");
+
+            function loadTab(tab, extra){
+                switch(tab){
+                    case "location-definitions":
+                        $.get("@Url.Action("GetLocationsForTab", "Parameters")", extra || {}, function(html){
+                            $content.html(html);
+                        });
+                        break;
+
+                    // diğer sekmelerinizi nasıl yüklüyorsanız aynı pattern
+                    case "penalty-definitions":
+                        $.get("@Url.Action("GetPenaltyDefinitionsForTab", "Parameters")", function(html){
+                            $content.html(html);
+                        }); break;
+
+                    case "user-definitions":
+                        $.get("@Url.Action("GetUsersForTab", "Parameters")", function(html){
+                            $content.html(html);
+                        }); break;
+
+                    case "car-type-definitions":
+                        $.get("@Url.Action("GetCarTypesForTab", "Parameters")", function(html){
+                            $content.html(html);
+                        }); break;
+
+                    default:
+                        // varsayılan sekme
+                        loadTab("location-definitions");
+                        break;
+                }
+            }
+
+            // nav click
+            $("#parametersTabs .nav-link").on("click", function(){
+                $("#parametersTabs .nav-link").removeClass("active");
+                $(this).addClass("active");
+                const tab = $(this).data("tab");
+                loadTab(tab);
+            });
+
+            // Sayfa açılışında lokasyon sekmesini göstermek isterseniz:
+            loadTab("location-definitions");
+            $("#parametersTabs .nav-link[data-tab='location-definitions']").addClass("active");
+        })();
+    </script>
+}
+

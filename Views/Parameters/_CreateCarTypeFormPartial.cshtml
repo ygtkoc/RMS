@@ -1,0 +1,27 @@
+﻿@model Dastone.Models.AracTipiTanimi
+
+<form id="createCarType" asp-action="CreateCarType" asp-controller="Parameters" method="post">
+    @Html.AntiForgeryToken()
+    <div class="mb-3">
+        <label asp-for="AracTipiName" class="form-label">Araç Tipi Adı <span class="text-danger">*</span></label>
+        <input asp-for="AracTipiName" type="text" class="form-control" required minlength="2" maxlength="100" />
+        <span asp-validation-for="AracTipiName" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="AracTipiAciklama" class="form-label">Açıklama</label>
+        <textarea asp-for="AracTipiAciklama" class="form-control" rows="3" maxlength="500"></textarea>
+        <span asp-validation-for="AracTipiAciklama" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Oluştur</button>
+    <div class="mt-3 form-message"></div>
+</form>
+
+<script>
+    $(document).ready(function () {
+        console.log('_CreateCarTypeFormPartial.cshtml loaded');
+        $('#createCarType input, #createCarType textarea').on('keyup change', function() {
+            const inputName = $(this).attr('name');
+            $(`span[data-valmsg-for="${inputName}"]`).text('');
+        });
+    });
+</script>

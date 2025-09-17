@@ -1,0 +1,17 @@
+﻿@model Dastone.Models.CezaTanimi
+
+<form id="deletePenaltyDefinitionForm" asp-action="DeletePenaltyDefinition" asp-controller="Parameters" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CezaTanimiID" />
+
+    <div class="alert alert-warning" role="alert">
+        <strong>Emin misiniz?</strong> Bu ceza tanımını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+        <br />
+        Ceza Kodu: <strong>@Model.CezaKodu</strong><br />
+        Kısa Açıklama: <strong>@Model.KisaAciklama</strong>
+    </div>
+
+    <button type="submit" class="btn btn-danger">Evet, Sil</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+    <div class="mt-3 form-message"></div>
+</form>

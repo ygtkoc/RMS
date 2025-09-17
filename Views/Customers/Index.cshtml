@@ -1,0 +1,447 @@
+﻿@model Dastone.Models.CustomersDashboardViewModel
+@{
+    ViewData["Title"] = "Müşteriler";
+}
+
+@section styles {
+    <style>
+        .custom-tabs .nav-link.active {
+            border-bottom: 2px solid #007bff;
+            color: #007bff;
+        }
+
+        .modal-body-content {
+            padding: 20px;
+        }
+
+        .dl-horizontal dt {
+            float: left;
+            width: 160px;
+            overflow: hidden;
+            clear: left;
+            text-align: right;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 10px;
+        }
+
+        .dl-horizontal dd {
+            margin-left: 170px;
+        }
+
+        @@media (max-width: 575.98px) {
+            .dl-horizontal dt, .dl-horizontal dd {
+                float: none;
+                width: auto;
+                margin-left: 0;
+                text-align: left;
+                white-space: normal;
+            }
+        }
+    </style>
+}
+
+@Html.AntiForgeryToken()
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0 font-size-18">Müşteriler</h4>
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="javascript: void(0);">RMS</a></li>
+                            <li class="breadcrumb-item active">Müşteriler</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <button type="button" class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#newCustomerOffcanvas">Müşteri Oluştur</button>
+                <button type="button" class="btn btn-success" data-bs-toggle="offcanvas" data-bs-target="#importCustomersOffcanvas">Excel'den İçeri Aktar</button>
+                <button type="button" class="btn btn-info" id="exportCustomersToExcel">Excel'e Aktar</button>
+            </div>
+        </div>
+
+        @if (ViewContext.HttpContext.Request.Query["success"] == "true")
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                Başarılı! @(ViewContext.HttpContext.Request.Query["message"]) 👍
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (ViewContext.HttpContext.Request.Query["success"] == "false")
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                Hata! @(ViewContext.HttpContext.Request.Query["message"]) 👎
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <ul class="nav nav-tabs nav-tabs-custom" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#allCustomersTab" role="tab" aria-selected="true" data-tab-id="allCustomers">
+                                    <span class="d-block d-sm-none"><i class="fas fa-home"></i></span>
+                                    <span class="d-none d-sm-block">Tüm Müşteriler (@Model.TotalCustomersCount)</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#individualCustomersTab" role="tab" aria-selected="false" data-tab-id="individualCustomers">
+                                    <span class="d-block d-sm-none"><i class="far fa-user"></i></span>
+                                    <span class="d-none d-sm-block">Şahsi Müşteriler (@Model.IndividualCustomersCount)</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#corporateCustomersTab" role="tab" aria-selected="false" data-tab-id="corporateCustomers">
+                                    <span class="d-block d-sm-none"><i class="fas fa-building"></i></span>
+                                    <span class="d-none d-sm-block">Tüzel Müşteriler (@Model.CorporateCustomersCount)</span>
+                                </a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content p-3 text-muted">
+                            <div class="tab-pane active" id="allCustomersTab" role="tabpanel">
+                                @await Html.PartialAsync("_CustomerListPartial", Model.AllCustomersPartial)
+                            </div>
+                            <div class="tab-pane" id="individualCustomersTab" role="tabpanel">
+                                @await Html.PartialAsync("_CustomerListPartial", Model.IndividualCustomersPartial)
+                            </div>
+                            <div class="tab-pane" id="corporateCustomersTab" role="tabpanel">
+                                @await Html.PartialAsync("_CustomerListPartial", Model.CorporateCustomersPartial)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="newCustomerOffcanvas" aria-labelledby="newCustomerOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 id="newCustomerOffcanvasLabel">Yeni Müşteri Oluştur</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+    </div>
+    <div class="offcanvas-body">
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="editCustomerOffcanvas" aria-labelledby="editCustomerOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 id="editCustomerOffcanvasLabel">Müşteri Düzenle</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+    </div>
+    <div class="offcanvas-body">
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="deleteCustomerOffcanvas" aria-labelledby="deleteCustomerOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 id="deleteCustomerOffcanvasLabel">Müşteri Sil</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+    </div>
+    <div class="offcanvas-body">
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="importCustomersOffcanvas" aria-labelledby="importCustomersOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 id="importCustomersOffcanvasLabel">Excel'den Müşteri Aktar</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form id="importExcelForm" asp-action="ImportFromExcel" asp-controller="Customers" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label for="excelFile" class="form-label">Excel Dosyası Seçin</label>
+                <input type="file" class="form-control" id="excelFile" name="excelFile" accept=".xls,.xlsx" required>
+            </div>
+            <div id="importExcelMessage" class="alert d-none"></div>
+            <button type="submit" class="btn btn-primary" id="importExcelBtn">İçe Aktar</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerDetailsModalLabel">Müşteri Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="customerDetailsModalBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                    <p class="mt-2">Müşteri bilgileri yükleniyor...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-primary" id="saveCustomerDetailsBtn" style="display: none;">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-labelledby="deleteCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteCustomerModalLabel">Müşteri Silme Onayı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bu müşteriyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
+                <input type="hidden" id="deleteCustomerId" value="" />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteCustomerBtn">Sil</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var bsDeleteCustomerModal = new bootstrap.Modal(document.getElementById('deleteCustomerModal'));
+        var bsEditCustomerOffcanvas = new bootstrap.Offcanvas(document.getElementById('editCustomerOffcanvas'));
+
+        $(document).on('click', '.delete-customer-btn', function (e) {
+            e.stopPropagation();
+            var customerId = $(this).data('customer-id');
+            $('#deleteCustomerId').val(customerId);
+            bsDeleteCustomerModal.show();
+        });
+
+        $(document).on('click', '#confirmDeleteCustomerBtn', function () {
+            var customerId = $('#deleteCustomerId').val();
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: '/Customers/DeleteCustomer/' + customerId,
+                type: 'POST',
+                headers: { "RequestVerificationToken": token },
+                success: function (response) {
+                    if (response.success) {
+                        toastr.success(response.message || 'Müşteri başarıyla silindi.');
+                        bsDeleteCustomerModal.hide();
+                        var activeTabId = $('a[data-bs-toggle="tab"].active').data('tab-id') || 'allCustomers';
+                        var searchQuery = $('#customerSearchInput').val() || '';
+                        loadCustomerList(activeTabId, 1, searchQuery);
+                    } else {
+                        toastr.error(response.message || 'Müşteri silinirken hata oluştu.');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    toastr.error('Sunucu hatası: ' + (xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : error));
+                }
+            });
+        });
+
+        function loadCustomerList(tabId, pageNumber, searchQuery) {
+            var url = '@Url.Action("GetCustomersForTab", "Customers")';
+            var targetDivId = '#' + tabId + 'Tab';
+            $(targetDivId).html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div><p class="mt-2">Müşteri Listesi Yükleniyor...</p></div>');
+            $.ajax({
+                url: url,
+                type: 'GET',
+                data: {
+                    customerType: tabId === 'allCustomers' ? null : (tabId === 'individualCustomers' ? true : false), // Şahsi: true (1), Tüzel: false (0)
+                    pageNumber: pageNumber,
+                    pageSize: 10,
+                    searchQuery: searchQuery
+                },
+                success: function (data) {
+                    $(targetDivId).html(data);
+                    $.validator.unobtrusive.parse($(targetDivId));
+                },
+                error: function (xhr, status, error) {
+                    $(targetDivId).html('<div class="alert alert-danger">Müşteri listesi yüklenirken hata oluştu.</div>');
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            var bsOffcanvasNewCustomer = new bootstrap.Offcanvas(document.getElementById('newCustomerOffcanvas'));
+            var bsOffcanvasImportCustomers = new bootstrap.Offcanvas(document.getElementById('importCustomersOffcanvas'));
+            var bsCustomerDetailsModal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
+
+            $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                var activeTabId = $(e.target).data('tab-id');
+                var currentSearchQuery = $('#customerSearchInput').val();
+                loadCustomerList(activeTabId, 1, currentSearchQuery);
+            });
+
+            var initialActiveTabId = $('a[data-bs-toggle="tab"].active').data('tab-id');
+            loadCustomerList(initialActiveTabId, 1, $('#customerSearchInput').val() || '');
+
+            $(document).on('click', '#customerSearchButton', function () {
+                var activeTabId = $('a[data-bs-toggle="tab"].active').data('tab-id');
+                const query = $('#customerSearchInput').val();
+                loadCustomerList(activeTabId, 1, query);
+            });
+
+            $(document).on('keyup', '#customerSearchInput', function (e) {
+                if (e.key === 'Enter') {
+                    var activeTabId = $('a[data-bs-toggle="tab"].active').data('tab-id');
+                    const query = $(this).val();
+                    loadCustomerList(activeTabId, 1, query);
+                }
+            });
+
+            $(document).on('click', '.load-customer-page', function (e) {
+                e.preventDefault();
+                var activeTabId = $('a[data-bs-toggle="tab"].active').data('tab-id');
+                const page = $(this).data('page');
+                const query = $(this).data('query');
+                loadCustomerList(activeTabId, page, query);
+            });
+
+            $(document).on('click', '.customer-row', function () {
+                var customerId = $(this).data('customer-id');
+                $('#customerDetailsModalBody').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Yükleniyor...</span></div><p class="mt-2">Müşteri bilgileri yükleniyor...</p></div>');
+                $('#saveCustomerDetailsBtn').hide();
+                bsCustomerDetailsModal.show();
+                $.get('/Customers/GetCustomerDetailsPartial/' + customerId, function (data) {
+                    $('#customerDetailsModalBody').html(data);
+                    $.validator.unobtrusive.parse($('#customerDetailsModalBody form'));
+                }).fail(function (xhr, status, error) {
+                    toastr.error('Müşteri detayları yüklenirken hata oluştu: ' + error);
+                    $('#customerDetailsModalBody').html('<div class="alert alert-danger">Müşteri detayları yüklenirken bir hata oluştu.</div>');
+                });
+            });
+
+            $('#newCustomerOffcanvas').on('show.bs.offcanvas', function () {
+                $(this).find('.offcanvas-body').html('<div class="text-center py-5"><div class="spinner-border text-info" role="status"><span class="visually-hidden">Yükleniyor...</span></div><p class="mt-2">Form Yükleniyor...</p></div>');
+                $.get('/Customers/CreateCustomerFormPartial', function (data) {
+                    $('#newCustomerOffcanvas .offcanvas-body').html(data);
+                    $.validator.unobtrusive.parse($('#newCustomerOffcanvas .offcanvas-body form'));
+                }).fail(function () {
+                    toastr.error('Yeni müşteri formu yüklenirken hata oluştu');
+                    bsOffcanvasNewCustomer.hide();
+                });
+            });
+
+            $('#editCustomerOffcanvas').on('show.bs.offcanvas', function (event) {
+                var customerId = $(event.relatedTarget).data('customer-id');
+                $(this).find('.offcanvas-body').html('<div class="text-center py-5"><div class="spinner-border text-info" role="status"><span class="visually-hidden">Yükleniyor...</span></div><p class="mt-2">Form Yükleniyor...</p></div>');
+                $.get('/Customers/EditCustomerFormPartial/' + customerId, function (data) {
+                    $('#editCustomerOffcanvas .offcanvas-body').html(data);
+                    $.validator.unobtrusive.parse($('#editCustomerOffcanvas .offcanvas-body form'));
+                }).fail(function () {
+                    toastr.error('Müşteri düzenleme formu yüklenirken hata oluştu');
+                    bsEditCustomerOffcanvas.hide();
+                });
+            });
+
+            $(document).on('submit', '#createCustomerForm', function (e) {
+                e.preventDefault();
+                var form = $(this);
+                var formMessageDiv = $('#formMessageCustomer');
+                formMessageDiv.text('').removeClass('alert alert-success alert-danger');
+                if (!form.valid()) {
+                    formMessageDiv.text('Lütfen tüm alanları doğru doldurunuz.').addClass('alert alert-danger');
+                    return;
+                }
+                $.ajax({
+                    url: form.attr('action'),
+                    type: form.attr('method'),
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            toastr.success(response.message || 'Müşteri başarıyla eklendi.');
+                            formMessageDiv.text(response.message || 'Müşteri başarıyla eklendi.').addClass('alert alert-success');
+                            bsOffcanvasNewCustomer.hide();
+                            loadCustomerList($('a[data-bs-toggle="tab"].active').data('tab-id'), 1, $('#customerSearchInput').val() || '');
+                        } else {
+                            toastr.error(response.message || 'Müşteri eklenirken hata oluştu.');
+                            formMessageDiv.text(response.message || 'Müşteri eklenirken hata oluştu.').addClass('alert alert-danger');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        toastr.error('Sunucu hatası: ' + error);
+                        formMessageDiv.text('Sunucu hatası: ' + error).addClass('alert alert-danger');
+                    }
+                });
+            });
+
+            $('#importExcelForm').on('submit', function(e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+                var $btn = $('#importExcelBtn');
+                var $msg = $('#importExcelMessage');
+                $msg.removeClass('alert-success alert-danger').addClass('d-none').text('');
+                $btn.prop('disabled', true).text('Yükleniyor...');
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: $(this).attr('method'),
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        $btn.prop('disabled', false).text('İçe Aktar');
+                        if (response.success) {
+                            $msg.removeClass('d-none alert-danger').addClass('alert alert-success').text(response.message || 'Müşteriler başarıyla içe aktarıldı.');
+                            setTimeout(function () {
+                                bsOffcanvasImportCustomers.hide();
+                                $('#importExcelForm')[0].reset();
+                                $msg.addClass('d-none');
+                                loadCustomerList($('a[data-bs-toggle="tab"].active').data('tab-id'), 1, $('#customerSearchInput').val() || '');
+                            }, 1500);
+                        } else {
+                            $msg.removeClass('d-none alert-success').addClass('alert alert-danger')
+                                .text((response.message || 'Müşteriler içe aktarılırken hata oluştu.') + (response.detail ? "\n" + response.detail : ""));
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        $btn.prop('disabled', false).text('İçe Aktar');
+                        $msg.removeClass('d-none alert-success').addClass('alert alert-danger').text('Sunucu hatası: ' + error);
+                    }
+                });
+            });
+
+            $(document).on('click', '#saveCustomerDetailsBtn', function () {
+                var form = $('#customerDetailsModalBody #updateCustomerForm');
+                var formMessageDiv = form.find('.form-message');
+                formMessageDiv.text('').removeClass('alert alert-success alert-danger');
+                if (!form.valid()) {
+                    formMessageDiv.text('Lütfen tüm alanları doğru doldurunuz.').addClass('alert alert-danger');
+                    return;
+                }
+                $.ajax({
+                    url: '/Customers/UpdateCustomerDetails/' + form.find('input[name="LOGICALREF"]').val(),
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            toastr.success(response.message || 'Müşteri bilgileri başarıyla güncellendi.');
+                            formMessageDiv.text(response.message || 'Müşteri bilgileri başarıyla güncellendi.').addClass('alert alert-success');
+                            bsCustomerDetailsModal.hide();
+                            loadCustomerList($('a[data-bs-toggle="tab"].active').data('tab-id'), 1, $('#customerSearchInput').val() || '');
+                        } else {
+                            toastr.error(response.message || 'Müşteri bilgileri güncellenirken hata oluştu.');
+                            formMessageDiv.text(response.message || 'Müşteri bilgileri güncellenirken hata oluştu.').addClass('alert alert-danger');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        toastr.error('Sunucu hatası: ' + error);
+                        formMessageDiv.text('Sunucu hatası: ' + error).addClass('alert alert-danger');
+                    }
+                });
+            });
+
+            $('#exportCustomersToExcel').on('click', function () {
+                window.location.href = '@Url.Action("ExportToExcel", "Customers")';
+            });
+        });
+    </script>
+}

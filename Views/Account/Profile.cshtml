@@ -1,0 +1,211 @@
+﻿@{
+    ViewData["Title"] = "Profil";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="page-content">
+    <div class="container-fluid">
+        <h4 class="mt-0 mb-3">Profil</h4>
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <img src="@ViewBag.User.ProfilePicturePath" alt="Profil Fotoğrafı" class="rounded-circle" width="150" height="150" id="profilePicture">
+                        <h5 class="mt-3">@ViewBag.User.FirstName @ViewBag.User.LastName</h5>
+                        <p class="text-muted">@ViewBag.User.RoleName</p>
+                        <form id="profilePictureForm" enctype="multipart/form-data">
+                            @Html.AntiForgeryToken()
+                            <div class="form-group mb-3">
+                                <label for="profilePictureInput">Yeni Profil Fotoğrafı</label>
+                                <input type="file" class="form-control" id="profilePictureInput" name="profilePicture" accept=".jpg,.jpeg,.png,.webp">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Fotoğrafı Yükle</button>
+                        </form>
+                        <div class="alert alert-success d-none mt-3" id="pictureMessage"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Kullanıcı Bilgileri</h5>
+                        <form id="profileForm">
+                            @Html.AntiForgeryToken()
+                            <div class="form-group mb-3">
+                                <label for="username">Kullanıcı Adı</label>
+                                <input type="text" class="form-control" id="username" name="username" value="@ViewBag.User.Username" required>
+                                <span class="text-danger" id="username-error"></span>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="email">E-posta</label>
+                                <input type="email" class="form-control" id="email" name="email" value="@ViewBag.User.Email" required>
+                                <span class="text-danger" id="email-error"></span>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="firstName">Ad</label>
+                                <input type="text" class="form-control" id="firstName" name="firstName" value="@ViewBag.User.FirstName">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="lastName">Soyad</label>
+                                <input type="text" class="form-control" id="lastName" name="lastName" value="@ViewBag.User.LastName">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="phoneNumber">Telefon Numarası</label>
+                                <input type="text" class="form-control" id="phoneNumber" name="phoneNumber" value="@ViewBag.User.phoneNumber">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Bilgileri Güncelle</button>
+                        </form>
+                        <div class="alert alert-success d-none mt-3" id="profileMessage"></div>
+                    </div>
+                </div>
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Şifre Değiştir</h5>
+                        <form id="changePasswordForm">
+                            @Html.AntiForgeryToken()
+                            <div class="form-group mb-3">
+                                <label for="currentPassword">Mevcut Şifre</label>
+                                <input type="password" class="form-control" id="currentPassword" name="currentPassword" required>
+                                <span class="text-danger" id="currentPassword-error"></span>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="newPassword">Yeni Şifre</label>
+                                <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+                                <span class="text-danger" id="newPassword-error"></span>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="confirmPassword">Yeni Şifre Onayı</label>
+                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                                <span class="text-danger" id="confirmPassword-error"></span>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Şifreyi Değiştir</button>
+                        </form>
+                        <div class="alert alert-success d-none mt-3" id="passwordMessage"></div>
+                    </div>
+                </div>
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="card-title">İki Aşamalı Doğrulama</h5>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="twoFactorSwitch" @(ViewBag.User.IsTwoFactorEnabled ? "checked" : "")>
+                            <label class="form-check-label" for="twoFactorSwitch">İki Aşamalı Doğrulama @(@ViewBag.User.IsTwoFactorEnabled ? "Aktif" : "Kapalı")</label>
+                        </div>
+                        <div class="alert alert-success d-none mt-3" id="twoFactorMessage"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Profil Bilgileri Güncelleme
+            $('#profileForm').on('submit', function (e) {
+                e.preventDefault();
+                $('#profileMessage').addClass('d-none').text('');
+                $('.text-danger').text('');
+
+                $.ajax({
+                    url: '@Url.Action("Profile", "Account")',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                    success: function (response) {
+                        if (response.success) {
+                            $('#profileMessage').removeClass('d-none').addClass('alert-success').removeClass('alert-danger').text(response.message);
+                        } else {
+                            $('#profileMessage').removeClass('d-none').addClass('alert-danger').removeClass('alert-success').text(response.message);
+                            if (response.errors) {
+                                $.each(response.errors, function (key, errors) {
+                                    $(`#${key.toLowerCase()}-error`).text(errors.join(', '));
+                                });
+                            }
+                        }
+                    },
+                    error: function (xhr) {
+                        $('#profileMessage').removeClass('d-none').addClass('alert-danger').removeClass('alert-success').text('Hata oluştu: ' + (xhr.responseJSON?.message || 'Sunucu hatası'));
+                    }
+                });
+            });
+
+            // Şifre Değiştirme
+            $('#changePasswordForm').on('submit', function (e) {
+                e.preventDefault();
+                $('#passwordMessage').addClass('d-none').text('');
+                $('.text-danger').text('');
+
+                $.ajax({
+                    url: '@Url.Action("ChangePassword", "Account")',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                    success: function (response) {
+                        if (response.success) {
+                            $('#passwordMessage').removeClass('d-none').addClass('alert-success').removeClass('alert-danger').text(response.message);
+                        } else {
+                            $('#passwordMessage').removeClass('d-none').addClass('alert-danger').removeClass('alert-success').text(response.message);
+                            if (response.errors) {
+                                $.each(response.errors, function (key, errors) {
+                                    $(`#${key.toLowerCase()}-error`).text(errors.join(', '));
+                                });
+                            }
+                        }
+                    },
+                    error: function (xhr) {
+                        $('#passwordMessage').removeClass('d-none').addClass('alert-danger').removeClass('alert-success').text('Hata oluştu: ' + (xhr.responseJSON?.message || 'Sunucu hatası'));
+                    }
+                });
+            });
+
+            // Profil Fotoğrafı Yükleme
+            $('#profilePictureForm').on('submit', function (e) {
+                e.preventDefault();
+                $('#pictureMessage').addClass('d-none').text('');
+
+                var formData = new FormData(this);
+                $.ajax({
+                    url: '@Url.Action("UploadProfilePicture", "Account")',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.success) {
+                            $('#profilePicture').attr('src', response.profilePicturePath);
+                            $('#pictureMessage').removeClass('d-none').addClass('alert-success').removeClass('alert-danger').text(response.message);
+                        } else {
+                            $('#pictureMessage').removeClass('d-none').addClass('alert-danger').removeClass('alert-success').text(response.message);
+                        }
+                    },
+                    error: function (xhr) {
+                        $('#pictureMessage').removeClass('d-none').addClass('alert-danger').removeClass('alert-success').text('Hata oluştu: ' + (xhr.responseJSON?.message || 'Sunucu hatası'));
+                    }
+                });
+            });
+
+            // 2FA Toggle
+            $('#twoFactorSwitch').on('change', function () {
+                var enable = $(this).is(':checked');
+                $.ajax({
+                    url: '@Url.Action("ToggleTwoFactorAuth", "Account")',
+                    type: 'POST',
+                    data: { enable: enable, '__RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                    success: function (response) {
+                        if (response.success) {
+                            $('#twoFactorMessage').removeClass('d-none').addClass('alert-success').removeClass('alert-danger').text(response.message);
+                            $('#twoFactorSwitch').next('label').text('İki Aşamalı Doğrulama ' + (enable ? 'Aktif' : 'Kapalı'));
+                        } else {
+                            $('#twoFactorMessage').removeClass('d-none').addClass('alert-danger').removeClass('alert-success').text(response.message);
+                            $('#twoFactorSwitch').prop('checked', !enable); // Geri al
+                        }
+                    },
+                    error: function (xhr) {
+                        $('#twoFactorMessage').removeClass('d-none').addClass('alert-danger').removeClass('alert-success').text('Hata oluştu: ' + (xhr.responseJSON?.message || 'Sunucu hatası'));
+                        $('#twoFactorSwitch').prop('checked', !enable); // Geri al
+                    }
+                });
+            });
+        });
+    </script>
+}

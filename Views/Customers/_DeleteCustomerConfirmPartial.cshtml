@@ -1,0 +1,28 @@
+﻿@model Dastone.Models.Customer
+
+<form id="deleteCustomerForm" asp-action="Delete" asp-controller="Customers" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="LOGICALREF" />
+
+    <div class="alert alert-warning" role="alert">
+        <strong>Emin misiniz?</strong> Bu müşteriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+        <br /><br />
+        Müşteri Adı: <strong>@Model.DEFINITION_</strong> <br />
+        @if (!string.IsNullOrEmpty(Model.TCKNO))
+        {
+            <span>TC Kimlik No: <strong>@Model.TCKNO</strong></span>
+
+            <br />
+        }
+        @if (!string.IsNullOrEmpty(Model.TAXNR))
+        {
+            <span>Vergi No: <strong>@Model.TAXNR</strong></span>
+
+            <br />
+        }
+    </div>
+
+    <button type="submit" class="btn btn-danger" id="submitDeleteCustomerForm">Evet, Sil</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">İptal</button>
+    <div id="formMessageDeleteCustomer" class="mt-3 form-message"></div>
+</form>

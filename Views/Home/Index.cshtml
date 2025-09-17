@@ -1,0 +1,270 @@
+﻿@using Dastone.Models
+@model DashboardViewModel // Model tipini belirtin
+
+@{
+    ViewData["Title"] = "Ana Sayfa";
+}
+
+<div class="container-fluid">
+    <!-- Page-Title -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="page-title-box">
+                <div class="row">
+                    <div class="col">
+                        <h4 class="page-title">Anasayfa</h4>
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item active">RMS</li>
+                            <li class="breadcrumb-item active">Ana Sayfa</li>
+                        </ol>
+                    </div><!--end col-->
+                  
+                </div><!--end row-->
+            </div><!--end page-title-box-->
+        </div><!--end col-->
+    </div><!--end row-->
+    <!-- end page title end breadcrumb -->
+    <div class="row">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Toplam Kiralama</h5>
+                    <p class="card-text">@Model.TotalRentalCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Aktif Kiralama</h5>
+                    <p class="card-text">@Model.ActiveRentalCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Toplam Araç</h5>
+                    <p class="card-text">@Model.TotalVehicleCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Müsait Araç</h5>
+                    <p class="card-text">@Model.AvailableVehicleCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Yeni Müşteriler (Son 30 Gün)</h5>
+                    <p class="card-text">@Model.NewCustomersLast30Days</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Toplam Müşteri</h5>
+                    <p class="card-text">@Model.TotalCustomerCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Ödenmemiş Cezalar</h5>
+                    <p class="card-text">@Model.UnpaidPenaltyCount (@Model.TotalUnpaidPenaltyAmount TL)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Aktif Kiralamalar Listesi (ViewBag'den gelen) *@
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Yaklaşan Kiralamalar</h5>
+                </div>
+                <div class="card-body">
+                    @{
+                        // ViewBag'deki veriyi List<Rental> türüne dönüştür
+                        var latestActiveRentals = ViewBag.LatestActiveRentals as List<Rental>;
+                    }
+                    @if (latestActiveRentals != null && latestActiveRentals.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var rental in latestActiveRentals)
+                            {
+                                <li class="list-group-item">
+                                    <strong>@rental.Arac?.Marka @rental.Arac?.Model (@rental.Arac?.Plaka)</strong> -
+                                    Müşteri: @rental.Musteri?.DEFINITION_
+                                    Başlangıç: @rental.BaslangicTarihi.ToString("dd.MM.yyyy")
+                                    @if (rental.BitisTarihi.HasValue)
+                                    {
+                                        <span>- Bitiş: @rental.BitisTarihi.Value.ToString("dd.MM.yyyy")</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p>Yaklaşan kiralama bulunmamaktadır.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Aktif Kiralama Sayıları (Mevcut Yıl)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="activeRentalsChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Geçmiş Kiralama Sayıları (Geçen Yıl)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="pastRentalsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+ 
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Son Kayıt Olan Müşteriler</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.LatestCustomers.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var customer in Model.LatestCustomers)
+                            {
+                                <li class="list-group-item">
+                                    @customer.Title (@customer.Eposta)
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p>Henüz yeni müşteri bulunmamaktadır.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Aktif Kiralamalar Grafiği
+            var activeRentalsCtx = document.getElementById('activeRentalsChart').getContext('2d');
+            var activeRentalsChart = new Chart(activeRentalsCtx, {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.ActiveRentalMonths)),
+                    datasets: [{
+                        label: 'Aktif Kiralamalar',
+                        data: @Html.Raw(Json.Serialize(Model.ActiveRentalCounts)),
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Geçmiş Kiralamalar Grafiği
+            var pastRentalsCtx = document.getElementById('pastRentalsChart').getContext('2d');
+            var pastRentalsChart = new Chart(pastRentalsCtx, {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.PastRentalMonths)),
+                    datasets: [{
+                        label: 'Geçmiş Kiralamalar',
+                        data: @Html.Raw(Json.Serialize(Model.PastRentalCounts)),
+                        backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Lokasyona Göre Araç Dağılımı Grafiği (Doughnut Chart)
+            var vehiclesByLocationCtx = document.getElementById('vehiclesByLocationChart').getContext('2d');
+            var vehiclesByLocationChart = new Chart(vehiclesByLocationCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.VehiclesByLocation.Select(x => x.LocationName))),
+                    datasets: [{
+                        data: @Html.Raw(Json.Serialize(Model.VehiclesByLocation.Select(x => x.Count))),
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(153, 102, 255, 0.6)',
+                            'rgba(255, 159, 64, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Lokasyona Göre Araç Sayısı'
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,30 @@
+﻿<div class="left-sidenav">
+    <!-- LOGO -->
+    <div class="brand">
+        <a asp-controller="Home" asp-action="Index" class="logo">
+            <span>
+                <img src="~/images/logo-sm.png" alt="logo-small" class="logo-sm">
+            </span>
+            <span>
+                <img src="~/images/logo.png" alt="logo-large" class="logo-lg logo-light">
+                <img src="~/images/logo-dark.png" alt="logo-large" class="logo-lg logo-dark">
+            </span>
+        </a>
+    </div>
+    <!--end logo-->
+    <div class="menu-content h-100" data-simplebar>
+        <ul class="metismenu left-sidenav-menu">   
+            <li>
+                <a href="javascript: void(0);"><i data-feather="truck" class="align-self-center menu-icon"></i><span>İşlemler</span><span class="menu-arrow"><i class="mdi mdi-chevron-right"></i></span></a>
+                <ul class="nav-second-level" aria-expanded="false">
+                    <li class="nav-item"><a class="nav-link" asp-controller="Vehicles" asp-action="Index"><i class="ti-control-record"></i>Araçlar</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Customers" asp-action="Index"><i class="ti-control-record"></i>Müşteriler</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="ti-control-record"></i>Faturalar</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Parameters" asp-action="Index"><i class="ti-control-record"></i>Parametreler</a></li>
+                </ul>
+            </li>       
+        </ul>
+        
+        </div>
+    </div>
+
