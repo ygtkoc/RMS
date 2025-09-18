@@ -1,76 +1,81 @@
-﻿@model Dastone.Models.Lokasyon
+@model Dastone.Models.Lokasyon
 
-<div class="modal-dialog">
-    <div class="modal-content">
-        <form id="createLocationForm" method="post" action="@Url.Action("CreateLocation","Parameters")">
-            @Html.AntiForgeryToken()
-
-            <div class="modal-header">
-                <h5 class="modal-title">Lokasyon Tanımı Oluştur</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
-            </div>
-
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Lokasyon Adı <span class="text-danger">*</span></label>
-                    <input asp-for="LokasyonAdi" class="form-control" />
-                    <span asp-validation-for="LokasyonAdi" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Açıklama</label>
-                    <textarea asp-for="Aciklama" class="form-control" rows="3"></textarea>
-                    <span asp-validation-for="Aciklama" class="text-danger"></span>
-                </div>
-
-                <div id="createLocationErrors" class="text-danger small"></div>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Kapat</button>
-                <button type="submit" class="btn btn-primary">Oluştur</button>
-            </div>
-        </form>
+<form id="createLocationForm" asp-action="CreateLocation" asp-controller="Parameters" method="post">
+    @Html.AntiForgeryToken()
+    <div class="mb-3">
+        <label asp-for="LokasyonAdi" class="form-label">Lokasyon Adı <span class="text-danger">*</span></label>
+        <input asp-for="LokasyonAdi" class="form-control" required maxlength="100" />
+        <span asp-validation-for="LokasyonAdi" class="text-danger"></span>
     </div>
-</div>
+    <div class="mb-3">
+        <label asp-for="Aciklama" class="form-label">Açıklama</label>
+        <textarea asp-for="Aciklama" class="form-control" rows="3" maxlength="250"></textarea>
+        <span asp-validation-for="Aciklama" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Oluştur</button>
+    <div class="mt-3 form-message"></div>
+</form>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script>
-        (function(){
-            $("#createLocationForm").on("submit", function(e){
-                e.preventDefault();
-                const $form = $(this);
-                const data = $form.serialize();
+<script>
+    (function () {
+        const $form = $('#createLocationForm');
 
-                $.post($form.attr("action"), data, function(resp){
-                    if(resp && resp.success){
-                        // başarı -> modalı kapat + listeyi yenile
-                        $("#createLocationModal").modal("hide");
-                        if (window.loadLocations) {
-                            // mevcut arama & sayfaya dokunmadan en başa dön
-                            window.loadLocations(1, 20, $("#locationSearchInput").val() || "");
+        $form.on('submit', function (e) {
+            e.preventDefault();
+
+            if (!$form.valid()) {
+                return;
+            }
+
+            $.ajax({
+                url: $form.attr('action'),
+                type: 'POST',
+                data: $form.serialize(),
+                headers: {
+                    'RequestVerificationToken': $form.find('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (response) {
+                    const $message = $form.find('.form-message');
+                    if (response.success) {
+                        $message.text(response.message).removeClass('alert-danger').addClass('alert alert-success');
+                        if (typeof showGlobalAlert === 'function') {
+                            showGlobalAlert(response.message || 'Lokasyon oluşturuldu.', 'success');
+                        }
+
+                        if (typeof updateTabCount === 'function' && typeof response.totalCount !== 'undefined') {
+                            updateTabCount('location', response.totalCount);
+                        }
+
+                        const offcanvasElement = $form.closest('.offcanvas-body').closest('.offcanvas')[0];
+                        const offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasElement);
+                        if (offcanvasInstance) {
+                            offcanvasInstance.hide();
+                        }
+
+                        if (typeof loadLocationList === 'function') {
+                            const query = $('#locationDefinitions').find('#locationSearchInput').val() || '';
+                            loadLocationList(1, query);
+                        } else {
+                            window.location.reload();
                         }
                     } else {
-                        // hataları göster
-                        const $errors = $("#createLocationErrors").empty();
-                        if(resp && resp.errors){
-                            let html = "<ul class='mb-0'>";
-                            for (const key in resp.errors){
-                                (resp.errors[key] || []).forEach(function(msg){
-                                    html += `<li>${msg}</li>`;
-                                });
+                        $message.text(response.message || 'Oluşturma başarısız.').removeClass('alert-success').addClass('alert alert-danger');
+                        if (response.errors) {
+                            for (const key in response.errors) {
+                                const $errorSpan = $form.find(`span[data-valmsg-for="${key}"]`);
+                                if ($errorSpan.length) {
+                                    $errorSpan.text(response.errors[key].join(', '));
+                                }
                             }
-                            html += "</ul>";
-                            $errors.html(html);
-                        } else {
-                            $errors.text(resp.message || "Bilinmeyen bir hata oluştu.");
                         }
+                        toastr.error(response.message || 'Lokasyon oluşturulamadı.');
                     }
-                }).fail(function(xhr){
-                    $("#createLocationErrors").text("İstek sırasında bir hata oluştu: " + (xhr.responseText || xhr.statusText));
-                });
+                },
+                error: function (xhr) {
+                    $form.find('.form-message').text(`Sunucu hatası: ${xhr.statusText}`).removeClass('alert-success').addClass('alert alert-danger');
+                    toastr.error(`Sunucu hatası: ${xhr.statusText}`);
+                }
             });
-        })();
-    </script>
-}
+        });
+    })();
+</script>

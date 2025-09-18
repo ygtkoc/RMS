@@ -43,12 +43,17 @@
                         <button class="btn btn-sm btn-soft-warning" type="button" data-bs-toggle="offcanvas" data-bs-target="#newCarTypeOffcanvas" aria-controls="newCarTypeOffcanvas" id="newCarTypeBtn">
                             <i data-feather="plus" class="align-self-center icon-xs me-1"></i> Araç Tipi Tanımı Oluştur
                         </button>
-                        
+                        <button class="btn btn-sm btn-soft-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#newLocationOffcanvas" aria-controls="newLocationOffcanvas" id="newLocationBtn">
+                            <i data-feather="map-pin" class="align-self-center icon-xs me-1"></i> Lokasyon Tanımı Oluştur
+                        </button>
+
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <div id="globalAlertContainer" class="mb-3"></div>
 
     @if (ViewContext.HttpContext.Request.Query["success"] == "true")
     {
@@ -69,23 +74,23 @@
         <ul class="nav nav-tabs" id="parametersTabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link @(Model.ActiveTab == "penalty-definitions" ? "active" : "")" id="penalty-definitions-tab" data-bs-toggle="tab" href="#penaltyDefinitions" role="tab" aria-controls="penaltyDefinitions" aria-selected="@(Model.ActiveTab == "penalty-definitions" ? "true" : "false")">
-                    Ceza Tanımları (@Model.TotalPenaltyDefinitionsCount)
+                    Ceza Tanımları (<span id="penaltyTabCount">@Model.TotalPenaltyDefinitionsCount</span>)
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(Model.ActiveTab == "user-definitions" ? "active" : "")" id="user-definitions-tab" data-bs-toggle="tab" href="#userDefinitions" role="tab" aria-controls="userDefinitions" aria-selected="@(Model.ActiveTab == "user-definitions" ? "true" : "false")">
-                    Danışman Tanımları (@Model.TotalUsersCount)
+                    Danışman Tanımları (<span id="userTabCount">@Model.TotalUsersCount</span>)
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(Model.ActiveTab == "cartype-definitions" ? "active" : "")" id="cartype-definitions-tab" data-bs-toggle="tab" href="#carTypeDefinitions" role="tab" aria-controls="carTypeDefinitions" aria-selected="@(Model.ActiveTab == "cartype-definitions" ? "true" : "false")">
-                    Araç Tipi Tanımları (@Model.TotalCarTypeCount)
+                    Araç Tipi Tanımları (<span id="carTypeTabCount">@Model.TotalCarTypeCount</span>)
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link @(Model.ActiveTab == "location-definitions" ? "active" : "")"
-                   data-bs-toggle="tab" href="#tab-location-definitions"
-                   onclick="loadLocationTab()">Lokasyon Tanımları (@Model.TotalLocationsCount)</a>
+                <a class="nav-link @(Model.ActiveTab == "location-definitions" ? "active" : "")" id="location-definitions-tab" data-bs-toggle="tab" href="#locationDefinitions" role="tab" aria-controls="locationDefinitions" aria-selected="@(Model.ActiveTab == "location-definitions" ? "true" : "false")">
+                    Lokasyon Tanımları (<span id="locationTabCount">@Model.TotalLocationsCount</span>)
+                </a>
             </li>
         </ul>
         <div class="tab-content" id="parametersTabsContent">
@@ -98,8 +103,8 @@
             <div class="tab-pane fade @(Model.ActiveTab == "cartype-definitions" ? "show active" : "")" id="carTypeDefinitions" role="tabpanel" aria-labelledby="cartype-definitions-tab">
                 @await Html.PartialAsync("_CarTypeListPartial", Model.CarTypePartial)
             </div>
-            <div class="tab-pane fade @(Model.ActiveTab == "location-definitions" ? "show active" : "")" id="tab-location-definitions" role="tabpanel" aria-labelledby="location-definitions-tab">                
-                    @await Html.PartialAsync("_LocationListPartial", Model.LocationsPartial)               
+            <div class="tab-pane fade @(Model.ActiveTab == "location-definitions" ? "show active" : "")" id="locationDefinitions" role="tabpanel" aria-labelledby="location-definitions-tab">
+                @await Html.PartialAsync("_LocationListPartial", Model.LocationsPartial)
             </div>
 
         </div>
@@ -166,6 +171,13 @@
         </div>
         <div class="offcanvas-body"></div>
     </div>
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="newLocationOffcanvas" aria-labelledby="newLocationOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title mt-0" id="newLocationOffcanvasLabel">Yeni Lokasyon Oluştur</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+        </div>
+        <div class="offcanvas-body"></div>
+    </div>
     <div class="offcanvas offcanvas-end" tabindex="-1" id="deleteUserOffcanvas" aria-labelledby="deleteUserOffcanvasLabel">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title mt-0" id="deleteUserOffcanvasLabel">Kullanıcı Sil</h5>
@@ -179,6 +191,107 @@
     <script>
         $(document).ready(function () {
             console.log('Parameters/Index.cshtml Scripts loaded');
+
+            const alertQueueKey = 'parametersQueuedAlert';
+
+            function showGlobalAlert(message, type = 'success') {
+                if (!message) {
+                    return;
+                }
+
+                const $container = $('#globalAlertContainer');
+                if (!$container.length) {
+                    return;
+                }
+
+                const normalizedType = ['success', 'danger', 'warning', 'info'].includes(type) ? type : 'success';
+                const iconMap = {
+                    success: 'ri-checkbox-circle-line',
+                    danger: 'ri-close-circle-line',
+                    warning: 'ri-error-warning-line',
+                    info: 'ri-information-line'
+                };
+                const alertClassMap = {
+                    success: 'alert-success',
+                    danger: 'alert-danger',
+                    warning: 'alert-warning',
+                    info: 'alert-info'
+                };
+
+                const $alert = $(`<div class="alert ${alertClassMap[normalizedType]} alert-dismissible fade show shadow-sm" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="${iconMap[normalizedType]} me-2"></i>
+                            <span>${message}</span>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+                    </div>`);
+
+                $container.append($alert);
+
+                setTimeout(() => {
+                    try {
+                        $alert.alert('close');
+                    } catch (error) {
+                        $alert.remove();
+                    }
+                }, 5000);
+            }
+
+            function queueGlobalAlert(message, type = 'success') {
+                if (!message) {
+                    return;
+                }
+
+                const payload = JSON.stringify({ message, type });
+                try {
+                    sessionStorage.setItem(alertQueueKey, payload);
+                } catch (error) {
+                    console.warn('Global alert queue yazılamadı:', error);
+                }
+            }
+
+            function drainQueuedAlert() {
+                try {
+                    const payload = sessionStorage.getItem(alertQueueKey);
+                    if (!payload) {
+                        return;
+                    }
+
+                    sessionStorage.removeItem(alertQueueKey);
+                    const parsed = JSON.parse(payload);
+                    if (parsed?.message) {
+                        showGlobalAlert(parsed.message, parsed.type || 'success');
+                    }
+                } catch (error) {
+                    console.warn('Global alert queue okunamadı:', error);
+                }
+            }
+
+            function updateTabCount(tabKey, count) {
+                const safeCount = typeof count === 'number' && !Number.isNaN(count) ? count : 0;
+                switch (tabKey) {
+                    case 'penalty':
+                        $('#penaltyTabCount').text(safeCount);
+                        break;
+                    case 'user':
+                        $('#userTabCount').text(safeCount);
+                        break;
+                    case 'carType':
+                        $('#carTypeTabCount').text(safeCount);
+                        break;
+                    case 'location':
+                        $('#locationTabCount').text(safeCount);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            window.showGlobalAlert = showGlobalAlert;
+            window.queueGlobalAlert = queueGlobalAlert;
+            window.updateTabCount = updateTabCount;
+
+            drainQueuedAlert();
 
             // Offcanvas form yükleme
             function loadOffcanvasForm(offcanvasId, url, itemId = null) {
@@ -219,6 +332,9 @@
             });
             $('#newCarTypeBtn').on('click', function() {
                 loadOffcanvasForm('newCarTypeOffcanvas', '@Url.Action("CreateCarTypeFormPartial", "Parameters")');
+            });
+            $('#newLocationBtn').on('click', function() {
+                loadOffcanvasForm('newLocationOffcanvas', '@Url.Action("CreateLocationFormPartial", "Parameters")');
             });
 
             // Ceza Tanımı Silme
@@ -437,18 +553,20 @@
                 headers: {
                     'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
                 },
-                        success: function (response) {
+                success: function (response) {
                     const $msgDiv = $form.find('.form-message');
                     if (response.success) {
                         $msgDiv.text(response.message).addClass('alert alert-success').removeClass('alert-danger');
                         $form[0].reset();
+                        queueGlobalAlert(response.message || 'Araç tipi oluşturuldu.', 'success');
+                        if (typeof showGlobalAlert === 'function') {
+                            showGlobalAlert(response.message || 'Araç tipi oluşturuldu.', 'success');
+                        }
                         const offcanvasInstance = bootstrap.Offcanvas.getInstance($form.closest('.offcanvas')[0]);
                         if (offcanvasInstance) {
                             offcanvasInstance.hide();
-                            $('.offcanvas-backdrop').remove();
                         }
-                        // Sayfayı yenile
-                        window.location.reload(); // Tek refresh
+                        window.location.reload();
                     } else {
                         $msgDiv.text(response.message || 'Oluşturma başarısız.').addClass('alert alert-danger').removeClass('alert-success');
                         if (response.errors) {
@@ -571,6 +689,32 @@
                 });
             }
 
+            function loadLocationList(page, query) {
+                console.log('Lokasyon listesi yükleniyor, sayfa:', page, 'sorgu:', query);
+                const targetDiv = $('#locationDefinitions');
+                $.ajax({
+                    url: '@Url.Action("GetLocationsForTab", "Parameters")',
+                    type: 'GET',
+                    data: { pageNumber: page, pageSize: 10, searchQuery: query },
+                    success: function (data) {
+                        targetDiv.html(data);
+                        $.validator.unobtrusive.parse(targetDiv);
+                        console.log('Lokasyon listesi başarıyla yüklendi.');
+                        const $meta = targetDiv.find('.location-meta').first();
+                        if ($meta.length) {
+                            const totalCount = parseInt($meta.data('total-count') || 0, 10);
+                            updateTabCount('location', totalCount);
+                        }
+                    },
+                    error: function (xhr) {
+                        targetDiv.html(`<div class="alert alert-danger">Lokasyonlar yüklenemedi: ${xhr.statusText}</div>`);
+                        console.error('Lokasyon liste yükleme hatası:', xhr.status, xhr.statusText, xhr.responseText);
+                    }
+                });
+            }
+
+            window.loadLocationList = loadLocationList;
+
             // Tab yönetimi
             const urlParams = new URLSearchParams(window.location.search);
             const activeTabParam = urlParams.get('activeTab');
@@ -579,6 +723,7 @@
                 if (activeTabParam === "penalty-definitions") tabToActivateId = "penaltyDefinitions";
                 else if (activeTabParam === "user-definitions") tabToActivateId = "userDefinitions";
                 else if (activeTabParam === "cartype-definitions") tabToActivateId = "carTypeDefinitions";
+                else if (activeTabParam === "location-definitions") tabToActivateId = "locationDefinitions";
                 if (tabToActivateId) {
                     console.log('Aktif tab yükleniyor:', tabToActivateId);
                     const tabTrigger = document.querySelector(`#parametersTabs a[href="#${tabToActivateId}"]`);
@@ -597,6 +742,7 @@
                     if (activeTabId === "penaltyDefinitions") paramValue = "penalty-definitions";
                     else if (activeTabId === "userDefinitions") paramValue = "user-definitions";
                     else if (activeTabId === "carTypeDefinitions") paramValue = "cartype-definitions";
+                    else if (activeTabId === "locationDefinitions") paramValue = "location-definitions";
                     currentUrl.searchParams.set('activeTab', paramValue);
                     if (urlParams.get('success') === 'true') currentUrl.searchParams.set('success', 'true');
                     if (urlParams.get('message')) currentUrl.searchParams.set('message', urlParams.get('message'));
@@ -607,61 +753,16 @@
                     if (activeTabId === "penaltyDefinitions") loadPenaltyDefinitionList(currentPage, currentSearchQuery);
                     else if (activeTabId === "userDefinitions") loadUserList(currentPage, currentSearchQuery);
                     else if (activeTabId === "carTypeDefinitions") loadCarTypeList(currentPage, currentSearchQuery);
+                    else if (activeTabId === "locationDefinitions") loadLocationList(currentPage, currentSearchQuery);
                 });
             });
 
             // Off-canvas kapandığında backdrop'u temizle
             $('.offcanvas').on('hidden.bs.offcanvas', function () {
                 $('.offcanvas-backdrop').remove();
+                $('body').removeClass('offcanvas-open').css({ overflow: '', paddingRight: '' });
             });
         });
-
-                     function(){
-            const $content = $("#parameters-tab-content");
-
-            function loadTab(tab, extra){
-                switch(tab){
-                    case "location-definitions":
-                        $.get("@Url.Action("GetLocationsForTab", "Parameters")", extra || {}, function(html){
-                            $content.html(html);
-                        });
-                        break;
-
-                    // diğer sekmelerinizi nasıl yüklüyorsanız aynı pattern
-                    case "penalty-definitions":
-                        $.get("@Url.Action("GetPenaltyDefinitionsForTab", "Parameters")", function(html){
-                            $content.html(html);
-                        }); break;
-
-                    case "user-definitions":
-                        $.get("@Url.Action("GetUsersForTab", "Parameters")", function(html){
-                            $content.html(html);
-                        }); break;
-
-                    case "car-type-definitions":
-                        $.get("@Url.Action("GetCarTypesForTab", "Parameters")", function(html){
-                            $content.html(html);
-                        }); break;
-
-                    default:
-                        // varsayılan sekme
-                        loadTab("location-definitions");
-                        break;
-                }
-            }
-
-            // nav click
-            $("#parametersTabs .nav-link").on("click", function(){
-                $("#parametersTabs .nav-link").removeClass("active");
-                $(this).addClass("active");
-                const tab = $(this).data("tab");
-                loadTab(tab);
-            });
-
-            // Sayfa açılışında lokasyon sekmesini göstermek isterseniz:
-            loadTab("location-definitions");
-            $("#parametersTabs .nav-link[data-tab='location-definitions']").addClass("active");
-        })();
     </script>
 }
 

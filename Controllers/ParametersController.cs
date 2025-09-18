@@ -26,6 +26,7 @@ namespace Dastone.Controllers
             var totalPenaltyDefinitionsCount = await _context.CezaTanimlari.CountAsync();
             var totalUsersCount = await _context.Users.CountAsync();
             var totalCarTypeCount = await _context.AracTipiTanimi.CountAsync();
+            var totalLocationsCount = await _context.Lokasyonlar.CountAsync();
 
             var model = new ParametersDashboardViewModel
             {
@@ -33,9 +34,11 @@ namespace Dastone.Controllers
                 TotalPenaltyDefinitionsCount = totalPenaltyDefinitionsCount,
                 TotalUsersCount = totalUsersCount,
                 TotalCarTypeCount = totalCarTypeCount,
+                TotalLocationsCount = totalLocationsCount,
                 PenaltyDefinitionsPartial = await GetPenaltyDefinitionListPartialViewModel(pageNumber, pageSize, searchQuery),
                 UsersPartial = await GetUserListPartialViewModel(pageNumber, pageSize, searchQuery),
-                CarTypePartial = await GetCarTypePartialViewModel(pageNumber, pageSize, searchQuery) // Yeni eklendi
+                CarTypePartial = await GetCarTypePartialViewModel(pageNumber, pageSize, searchQuery),
+                LocationsPartial = await GetLocationPartialViewModel(pageNumber, pageSize, searchQuery)
             };
 
             return View(model);
@@ -80,6 +83,137 @@ namespace Dastone.Controllers
                 TotalPages = totalPages,
                 SearchQuery = searchQuery
             };
+        }
+
+        private async Task<LocationPartialViewModel> GetLocationPartialViewModel(int pageNumber, int pageSize, string searchQuery)
+        {
+            if (pageNumber < 1)
+            {
+                pageNumber = 1;
+            }
+
+            if (pageSize < 1)
+            {
+                pageSize = 10;
+            }
+
+            IQueryable<Lokasyon> query = _context.Lokasyonlar.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                query = query.Where(l =>
+                    l.LokasyonAdi.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    (l.Aciklama != null && l.Aciklama.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            var totalCount = await query.CountAsync();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+
+            if (pageNumber > totalPages)
+            {
+                pageNumber = totalPages;
+            }
+
+            var locations = await query
+                .OrderBy(l => l.LokasyonAdi)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new LocationPartialViewModel
+            {
+                Locations = locations,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                SearchQuery = searchQuery
+            };
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLocationsForTab(int pageNumber = 1, int pageSize = 10, string searchQuery = "")
+        {
+            var locationPartial = await GetLocationPartialViewModel(pageNumber, pageSize, searchQuery);
+            return PartialView("_LocationListPartial", locationPartial);
+        }
+
+        [HttpGet]
+        public IActionResult CreateLocationFormPartial()
+        {
+            return PartialView("_CreateLocationFormPartial", new Lokasyon());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateLocation([Bind("LokasyonAdi,Aciklama")] Lokasyon lokasyon)
+        {
+            if (!ModelState.IsValid)
+            {
+                var modelErrors = ModelState.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray());
+
+                return Json(new { success = false, message = "Formda hatalar var.", errors = modelErrors });
+            }
+
+            if (await _context.Lokasyonlar.AnyAsync(l => l.LokasyonAdi == lokasyon.LokasyonAdi))
+            {
+                ModelState.AddModelError(nameof(Lokasyon.LokasyonAdi), "Bu isimde bir lokasyon zaten mevcut.");
+
+                var duplicateErrors = ModelState.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray());
+
+                return Json(new { success = false, message = "Formda hatalar var.", errors = duplicateErrors });
+            }
+
+            _context.Lokasyonlar.Add(lokasyon);
+            await _context.SaveChangesAsync();
+
+            var totalLocations = await _context.Lokasyonlar.CountAsync();
+
+            return Json(new
+            {
+                success = true,
+                message = $"{lokasyon.LokasyonAdi} oluşturuldu.",
+                totalCount = totalLocations
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteLocation(int id)
+        {
+            var location = await _context.Lokasyonlar.FindAsync(id);
+            if (location == null)
+            {
+                return Json(new { success = false, message = "Lokasyon bulunamadı." });
+            }
+
+            var hasVehicles = await _context.Araclar.AnyAsync(v => v.LokasyonID == id);
+            if (hasVehicles)
+            {
+                return Json(new { success = false, message = "Bu lokasyona bağlı araçlar olduğu için silinemiyor." });
+            }
+
+            var hasRentals = await _context.Kiralamalar.AnyAsync(r => r.LokasyonID == id);
+            if (hasRentals)
+            {
+                return Json(new { success = false, message = "Bu lokasyon kiralama kayıtlarında kullanıldığı için silinemiyor." });
+            }
+
+            _context.Lokasyonlar.Remove(location);
+            await _context.SaveChangesAsync();
+
+            var totalLocations = await _context.Lokasyonlar.CountAsync();
+
+            return Json(new
+            {
+                success = true,
+                message = $"{location.LokasyonAdi} silindi.",
+                totalCount = totalLocations
+            });
         }
 
         // GET: Parameters/CreatePenaltyDefinitionFormPartial
