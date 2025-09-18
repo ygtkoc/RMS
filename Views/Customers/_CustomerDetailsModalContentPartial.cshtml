@@ -42,53 +42,132 @@
 
     <div class="tab-content p-3 text-muted">
         <div class="tab-pane active" id="customerGeneralInfoTab" role="tabpanel">
-            <div class="row">
-                <div class="col-md-6 col-sm-12">
-                    <dl class="row dl-horizontal">
-                        <dt class="col-sm-4">Müşteri Türü:</dt>
-                        <dd class="col-sm-8">@(Model.IsPersonalCompany.HasValue ? (Model.IsPersonalCompany.Value ? "Şahsi" : "Tüzel") : "Bilinmiyor")</dd>
+            @{
+                Func<string?, string> displayOrDefault = value => string.IsNullOrWhiteSpace(value) ? "Belirtilmemiş" : value!.Trim();
 
-                        <dt class="col-sm-4">Adı Soyadı/Unvanı:</dt>
-                        <dd class="col-sm-8">
-                            @(string.IsNullOrEmpty(Model.DEFINITION_)
-                                                        ? (!string.IsNullOrEmpty(Model.NAME) || !string.IsNullOrEmpty(Model.SURNAME)
-                                                        ? (Model.NAME + " " + (Model.SURNAME ?? ""))
-                                                        : "Belirtilmemiş")
-                                                        : Model.DEFINITION_)
-                        </dd>
+                var displayName = string.IsNullOrWhiteSpace(Model?.DEFINITION_)
+                    ? (!string.IsNullOrWhiteSpace(Model?.NAME) || !string.IsNullOrWhiteSpace(Model?.SURNAME)
+                        ? $"{(Model?.NAME ?? string.Empty).Trim()} {(Model?.SURNAME ?? string.Empty).Trim()}".Trim()
+                        : "Belirtilmemiş")
+                    : Model!.DEFINITION_;
 
-                        @if (Model.IsPersonalCompany.HasValue && Model.IsPersonalCompany.Value)
-                        {
-                            <dt class="col-sm-4">Kimlik No:</dt>
-                            <dd class="col-sm-8">@Html.DisplayFor(model => model.TCKNO)</dd>
+                var customerType = Model?.IsPersonalCompany.HasValue == true
+                    ? (Model.IsPersonalCompany.Value ? "Şahsi Müşteri" : "Tüzel Müşteri")
+                    : "Müşteri Türü Belirtilmemiş";
+
+                var registrationDate = Model?.CAPIBLOCK_CREADEDDATE.HasValue == true
+                    ? Model.CAPIBLOCK_CREADEDDATE.Value.ToString("dd.MM.yyyy HH:mm")
+                    : "Belirtilmemiş";
+
+                var phoneValue = displayOrDefault(Model?.CELLPHONE);
+                var primaryEmail = displayOrDefault(Model?.EMAILADDR);
+
+                var initials = new string(displayName
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(part => char.ToUpperInvariant(part[0]))
+                    .Take(2)
+                    .ToArray());
+
+                if (string.IsNullOrWhiteSpace(initials))
+                {
+                    initials = "M";
+                }
+
+                var infoTiles = new List<(string Label, string Value)>();
+
+                if (Model?.IsPersonalCompany.HasValue == true && Model.IsPersonalCompany.Value)
+                {
+                    infoTiles.Add(("Kimlik No", displayOrDefault(Model.TCKNO)));
+                }
+                else if (Model?.IsPersonalCompany.HasValue == true && !Model.IsPersonalCompany.Value)
+                {
+                    infoTiles.Add(("Vergi No", displayOrDefault(Model.TAXNR)));
+                    infoTiles.Add(("Vergi Dairesi", displayOrDefault(Model.TAXOFFICE)));
+                }
+
+                var locationParts = new[] { Model?.TOWN, Model?.CITY, Model?.COUNTRY }
+                    .Where(part => !string.IsNullOrWhiteSpace(part))
+                    .Select(part => part!.Trim())
+                    .ToArray();
+
+                if (locationParts.Any())
+                {
+                    infoTiles.Add(("Bölge", string.Join(" / ", locationParts)));
+                }
+
+                infoTiles.Add(("Kayıt Tarihi", registrationDate));
+
+                var addressValue = displayOrDefault(Model?.ADDR1);
+            }
+            <div class="customer-general-info">
+                <div class="card general-info-card">
+                    <div class="card-body">
+                        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                            <div class="d-flex align-items-center gap-3 flex-grow-1">
+                                <div class="customer-avatar">@initials</div>
+                                <div>
+                                    <h4 class="customer-name mb-1">@displayName</h4>
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <span class="badge rounded-pill customer-type-badge">@customerType</span>
+                                        <span class="text-muted small">
+                                            <i class="far fa-calendar-check me-1"></i>Kayıt: @registrationDate
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="general-info-contact">
+                                <div class="contact-item">
+                                    <span class="contact-icon"><i class="fas fa-phone-alt"></i></span>
+                                    <div>
+                                        <span class="contact-label">Telefon</span>
+                                        <span class="contact-value">@phoneValue</span>
+                                    </div>
+                                </div>
+                                <div class="contact-item">
+                                    <span class="contact-icon"><i class="fas fa-envelope"></i></span>
+                                    <div>
+                                        <span class="contact-label">E-Posta</span>
+                                        <span class="contact-value">@primaryEmail</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @{
+                            var secondaryEmails = new[] { Model?.EMAILADDR2, Model?.EMAILADDR3 }
+                                .Where(email => !string.IsNullOrWhiteSpace(email))
+                                .Select(email => email!.Trim())
+                                .ToList();
                         }
-                        else if (Model.IsPersonalCompany.HasValue && !Model.IsPersonalCompany.Value)
+                        @if (secondaryEmails.Any())
                         {
-                            <dt class="col-sm-4">Vergi No:</dt>
-                            <dd class="col-sm-8">@Html.DisplayFor(model => model.TAXNR)</dd>
-
-                            <dt class="col-sm-4">Vergi Dairesi:</dt>
-                            <dd class="col-sm-8">@Html.DisplayFor(model => model.TAXOFFICE)</dd>
+                            <div class="general-info-extra mt-3">
+                                <span class="info-label mb-2 d-block">Ek E-Postalar</span>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var email in secondaryEmails)
+                                    {
+                                        <span class="email-pill"><i class="far fa-envelope me-1"></i>@email</span>
+                                    }
+                                </div>
+                            </div>
                         }
-
-                        <dt class="col-sm-4">Telefon:</dt>
-                        <dd class="col-sm-8">@Html.DisplayFor(model => model.CELLPHONE)</dd>
-
-                        <dt class="col-sm-4">E-posta:</dt>
-                        <dd class="col-sm-8">@Html.DisplayFor(model => model.EMAILADDR)</dd>
-
-                        <dt class="col-sm-4">E-posta 2:</dt>
-                        <dd class="col-sm-8">@Html.DisplayFor(model => model.EMAILADDR2)</dd>
-
-                        <dt class="col-sm-4">E-posta 3:</dt>
-                        <dd class="col-sm-8">@Html.DisplayFor(model => model.EMAILADDR3)</dd>
-
-                        <dt class="col-sm-4">Adres:</dt>
-                        <dd class="col-sm-8">@(Model.ADDR1 ?? "Belirtilmemiş")</dd>
-
-                        <dt class="col-sm-4">Kayıt Tarihi:</dt>
-                        <dd class="col-sm-8">@(Model.CAPIBLOCK_CREADEDDATE.HasValue? Model.CAPIBLOCK_CREADEDDATE.Value.ToString("dd.MM.yyyy HH:mm") : "Belirtilmemiş")</dd>
-                    </dl>
+                    </div>
+                </div>
+                <div class="row g-3 general-info-grid">
+                    @foreach (var tile in infoTiles)
+                    {
+                        <div class="col-sm-6 col-lg-4">
+                            <div class="info-tile">
+                                <span class="info-label">@tile.Label</span>
+                                <p class="info-value mb-0">@tile.Value</p>
+                            </div>
+                        </div>
+                    }
+                    <div class="col-12">
+                        <div class="info-tile address-tile">
+                            <span class="info-label">Adres</span>
+                            <p class="info-value mb-0">@addressValue</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

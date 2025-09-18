@@ -1253,12 +1253,13 @@ namespace Dastone.Models
     // Müşteri listesi partial'ı için ViewModel
     public class CustomerListPartialViewModel
     {
-        public List<Customer> Customers { get; set; }
+        public List<Customer> Customers { get; set; } = new();
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
         public int TotalPages { get; set; }
-        public string SearchQuery { get; set; }
-        public bool CustomerType { get; set; } // "all", "individual", "corporate"
+        public string SearchQuery { get; set; } = string.Empty;
+        public bool? CustomerType { get; set; }
+        public string TabId { get; set; } = "allCustomers"; // "allCustomers", "individualCustomers", "corporateCustomers"
     }
 
     public class ParametersDashboardViewModel

@@ -48,7 +48,7 @@ namespace RentalManagementSystem.Controllers
 
         // AJAX: Müşteri listesi için partial view döndürür (tablar için)
         [HttpGet]
-        public async Task<IActionResult> GetCustomersForTab(bool customerType, int pageNumber = 1, int pageSize = 10, string searchQuery = "")
+        public async Task<IActionResult> GetCustomersForTab(bool? customerType, int pageNumber = 1, int pageSize = 10, string searchQuery = "")
         {
             var customerListViewModel = await GetCustomerListPartialViewModel(customerType, pageNumber, pageSize, searchQuery);
             return PartialView("_CustomerListPartial", customerListViewModel);
@@ -56,7 +56,10 @@ namespace RentalManagementSystem.Controllers
 
         private async Task<CustomerListPartialViewModel> GetCustomerListPartialViewModel(bool? customerType, int pageNumber, int pageSize, string searchQuery)
         {
-            IQueryable<Customer> customersQuery = _context.Customers;
+            IQueryable<Customer> customersQuery = _context.Customers.AsNoTracking();
+
+            searchQuery = searchQuery?.Trim() ?? string.Empty;
+            var tabId = "allCustomers";
 
             // Müşteri türüne göre filtreleme
             if (customerType.HasValue)
@@ -64,15 +67,17 @@ namespace RentalManagementSystem.Controllers
                 if (customerType.Value)
                 {
                     customersQuery = customersQuery.Where(c => c.ISPERSCOMP == "1"); // Şahsi - sadece 1 olanlar
+                    tabId = "individualCustomers";
                 }
                 else
                 {
                     customersQuery = customersQuery.Where(c => c.ISPERSCOMP == "0"); // Tüzel - sadece 0 olanlar
+                    tabId = "corporateCustomers";
                 }
             }
 
             // Arama sorgusuna göre filtreleme
-            if (!string.IsNullOrEmpty(searchQuery))
+            if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 customersQuery = customersQuery.Where(c =>
                     (c.DEFINITION_ != null && c.DEFINITION_.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) ||
@@ -127,7 +132,9 @@ namespace RentalManagementSystem.Controllers
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalPages = totalPages,
-                SearchQuery = searchQuery
+                SearchQuery = searchQuery,
+                CustomerType = customerType,
+                TabId = tabId
             };
         }
 
@@ -463,15 +470,167 @@ namespace RentalManagementSystem.Controllers
         {
             try
             {
-                var customer = await _context.Customers
-                    .Include(c => c.Kiralamalar)
-                        .ThenInclude(k => k.Arac)
-                    .FirstOrDefaultAsync(c => c.LOGICALREF == id);
+                var customerData = await _context.Customers
+                    .AsNoTracking()
+                    .Where(c => c.LOGICALREF == id)
+                    .Select(c => new
+                    {
+                        c.LOGICALREF,
+                        c.ISPERSCOMP,
+                        c.DEFINITION_,
+                        c.NAME,
+                        c.SURNAME,
+                        c.TCKNO,
+                        c.TAXNR,
+                        c.TAXOFFICE,
+                        c.CELLPHONE,
+                        c.EMAILADDR,
+                        c.EMAILADDR2,
+                        c.EMAILADDR3,
+                        c.ADDR1,
+                        c.CAPIBLOCK_CREADEDDATE,
+                        Kiralamalar = c.Kiralamalar
+                            .OrderBy(k => k.BaslangicTarihi)
+                            .Select(k => new
+                            {
+                                k.KiralamaID,
+                                k.BaslangicTarihi,
+                                k.BitisTarihi,
+                                k.Durum,
+                                Arac = k.Arac == null ? null : new
+                                {
+                                    k.Arac.AracID,
+                                    k.Arac.Plaka
+                                },
+                                Lokasyon = k.Lokasyon == null ? null : new
+                                {
+                                    k.Lokasyon.LokasyonID,
+                                    k.Lokasyon.LokasyonAdi
+                                }
+                            }),
+                        Araclar = c.Araclar
+                            .Select(a => new
+                            {
+                                a.AracID,
+                                a.Plaka,
+                                a.Marka,
+                                a.Model,
+                                a.ModelYili,
+                                a.Durum
+                            }),
+                        Cezalar = c.Cezalar
+                            .OrderBy(z => z.CezaTarihi)
+                            .Select(z => new
+                            {
+                                z.CezaID,
+                                z.CezaTarihi,
+                                z.Tutar,
+                                z.Aciklama,
+                                z.Odendi,
+                                CezaTanimi = z.CezaTanimi == null ? null : new
+                                {
+                                    z.CezaTanimi.CezaTanimiID,
+                                    z.CezaTanimi.KisaAciklama
+                                }
+                            }),
+                        OtoyolGecisleri = c.OtoyolGecisleri
+                            .OrderBy(g => g.GecisTarihi)
+                            .Select(g => new
+                            {
+                                g.GecisID,
+                                g.GecisTarihi,
+                                g.Tutar,
+                                g.Aciklama,
+                                Lokasyon = g.Lokasyon == null ? null : new
+                                {
+                                    g.Lokasyon.LokasyonID,
+                                    g.Lokasyon.LokasyonAdi
+                                }
+                            })
+                    })
+                    .FirstOrDefaultAsync();
 
-                if (customer == null)
+                if (customerData == null)
                 {
                     return NotFound();
                 }
+
+                var customer = new Customer
+                {
+                    LOGICALREF = customerData.LOGICALREF,
+                    ISPERSCOMP = customerData.ISPERSCOMP,
+                    DEFINITION_ = customerData.DEFINITION_,
+                    NAME = customerData.NAME,
+                    SURNAME = customerData.SURNAME,
+                    TCKNO = customerData.TCKNO,
+                    TAXNR = customerData.TAXNR,
+                    TAXOFFICE = customerData.TAXOFFICE,
+                    CELLPHONE = customerData.CELLPHONE,
+                    EMAILADDR = customerData.EMAILADDR,
+                    EMAILADDR2 = customerData.EMAILADDR2,
+                    EMAILADDR3 = customerData.EMAILADDR3,
+                    ADDR1 = customerData.ADDR1,
+                    CAPIBLOCK_CREADEDDATE = customerData.CAPIBLOCK_CREADEDDATE,
+                    Kiralamalar = customerData.Kiralamalar?
+                        .Select(k => new Rental
+                        {
+                            KiralamaID = k.KiralamaID,
+                            BaslangicTarihi = k.BaslangicTarihi,
+                            BitisTarihi = k.BitisTarihi,
+                            Durum = k.Durum,
+                            Arac = k.Arac == null ? null : new Vehicle
+                            {
+                                AracID = k.Arac.AracID,
+                                Plaka = k.Arac.Plaka
+                            },
+                            Lokasyon = k.Lokasyon == null ? null : new Lokasyon
+                            {
+                                LokasyonID = k.Lokasyon.LokasyonID,
+                                LokasyonAdi = k.Lokasyon.LokasyonAdi
+                            }
+                        })
+                        .ToList() ?? new List<Rental>(),
+                    Araclar = customerData.Araclar?
+                        .Select(a => new Vehicle
+                        {
+                            AracID = a.AracID,
+                            Plaka = a.Plaka,
+                            Marka = a.Marka,
+                            Model = a.Model,
+                            ModelYili = a.ModelYili,
+                            Durum = a.Durum
+                        })
+                        .ToList() ?? new List<Vehicle>(),
+                    Cezalar = customerData.Cezalar?
+                        .Select(z => new Ceza
+                        {
+                            CezaID = z.CezaID,
+                            CezaTarihi = z.CezaTarihi,
+                            Tutar = z.Tutar,
+                            Aciklama = z.Aciklama,
+                            Odendi = z.Odendi,
+                            CezaTanimi = z.CezaTanimi == null ? null : new CezaTanimi
+                            {
+                                CezaTanimiID = z.CezaTanimi.CezaTanimiID,
+                                KisaAciklama = z.CezaTanimi.KisaAciklama
+                            }
+                        })
+                        .ToList() ?? new List<Ceza>(),
+                    OtoyolGecisleri = customerData.OtoyolGecisleri?
+                        .Select(g => new OtoyolGecisi
+                        {
+                            GecisID = g.GecisID,
+                            GecisTarihi = g.GecisTarihi,
+                            Tutar = g.Tutar,
+                            Aciklama = g.Aciklama,
+                            Lokasyon = g.Lokasyon == null ? null : new Lokasyon
+                            {
+                                LokasyonID = g.Lokasyon.LokasyonID,
+                                LokasyonAdi = g.Lokasyon.LokasyonAdi
+                            }
+                        })
+                        .ToList() ?? new List<OtoyolGecisi>()
+                };
 
                 return PartialView("_CustomerDetailsModalContentPartial", customer);
             }
