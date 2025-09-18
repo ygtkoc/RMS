@@ -1,20 +1,34 @@
 ﻿@model Dastone.Models.CustomerListPartialViewModel
+@using System.Linq
 
-<div class="card">
+@{
+    var searchInputId = $"{Model.TabId}-customer-search";
+}
+
+<div class="card customer-list-card" data-tab-id="@Model.TabId">
     <div class="card-header">
-        <div class="row align-items-center">
+        <div class="row align-items-center g-2">
             <div class="col">
-                <h4 class="card-title">Müşteri Listesi</h4>
+                <h4 class="card-title mb-0">Müşteri Listesi</h4>
             </div>
-            <div class="col-auto">
-                <input type="text" id="customerSearchInput" class="form-control" placeholder="Ara..." style="width: 200px;">
-                <button type="button" id="customerSearchButton" class="btn btn-sm btn-primary ms-2">Ara</button>
+            <div class="col-12 col-md-auto">
+                <div class="customer-search-group input-group input-group-sm">
+                    <input type="text"
+                           class="form-control customer-search-input"
+                           id="@searchInputId"
+                           value="@Model.SearchQuery"
+                           placeholder="Müşteri ara..."
+                           aria-label="Müşteri arama" />
+                    <button type="button" class="btn btn-primary customer-search-button">
+                        Ara
+                    </button>
+                </div>
             </div>
         </div>
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-striped table-hover mb-0">
+            <table class="table table-striped table-hover mb-0 customer-table align-middle">
                 <thead>
                     <tr>
                         <th>Müşteri Türü</th>
@@ -32,15 +46,33 @@
                     {
                         @foreach (var customer in Model.Customers)
                         {
+                            var displayName = string.IsNullOrWhiteSpace(customer.DEFINITION_)
+                                ? string.Join(" ", new[] { customer.NAME, customer.SURNAME }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim()
+                                : customer.DEFINITION_;
+                            displayName = string.IsNullOrWhiteSpace(displayName) ? "Belirtilmemiş" : displayName;
+                            var identityValue = customer.IsPersonalCompany == true
+                                ? (!string.IsNullOrWhiteSpace(customer.TCKNO) ? customer.TCKNO : "N/A")
+                                : (!string.IsNullOrWhiteSpace(customer.TAXNR) ? customer.TAXNR : "N/A");
+                            var phoneValue = !string.IsNullOrWhiteSpace(customer.CELLPHONE) ? customer.CELLPHONE : "N/A";
+                            var emailValue = !string.IsNullOrWhiteSpace(customer.EMAILADDR) ? customer.EMAILADDR : "N/A";
+                            var addressValue = !string.IsNullOrWhiteSpace(customer.ADDR1) ? customer.ADDR1 : "N/A";
                             <tr class="customer-row" data-customer-id="@customer.LOGICALREF" style="cursor: pointer;">
                                 <td>@(customer.IsPersonalCompany == true ? "Şahsi" : customer.IsPersonalCompany == false ? "Tüzel" : "Bilinmiyor")</td>
-                                <td>@(string.IsNullOrEmpty(customer.DEFINITION_) ? (customer.NAME + " " + customer.SURNAME ?? "") : customer.DEFINITION_)</td>
-                                <td>@(customer.IsPersonalCompany == true ? customer.TCKNO : customer.TAXNR ?? "N/A")</td>
-                                <td>@customer.CELLPHONE</td>
-                                <td>@customer.EMAILADDR</td>
-                                <td>@customer.ADDR1</td>
-                                <td>@(customer.TAXOFFICE ?? "N/A")</td>
                                 <td>
+                                    <span class="d-inline-block text-truncate customer-name" title="@displayName">@displayName</span>
+                                </td>
+                                <td>@identityValue</td>
+                                <td>
+                                    <span class="d-inline-block text-truncate customer-phone" title="@phoneValue">@phoneValue</span>
+                                </td>
+                                <td>
+                                    <span class="d-inline-block text-truncate customer-email" title="@emailValue">@emailValue</span>
+                                </td>
+                                <td>
+                                    <span class="d-inline-block text-truncate customer-address" title="@addressValue">@addressValue</span>
+                                </td>
+                                <td>@(customer.TAXOFFICE ?? "N/A")</td>
+                                <td class="customer-actions">
                                     <button type="button" class="btn btn-sm btn-soft-info" data-bs-toggle="modal" data-bs-target="#customerDetailsModal" data-customer-id="@customer.LOGICALREF">Detay</button>
                                     <button type="button" class="btn btn-sm btn-soft-primary" data-bs-toggle="offcanvas" data-bs-target="#editCustomerOffcanvas" data-customer-id="@customer.LOGICALREF">Düzenle</button>
                                     <button type="button" class="btn btn-sm btn-soft-danger delete-customer-btn" data-customer-id="@customer.LOGICALREF">Sil</button>
