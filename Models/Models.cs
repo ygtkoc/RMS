@@ -1286,6 +1286,7 @@ namespace Dastone.Models
             PenaltyDefinitionsPartial = new PenaltyDefinitionListPartialViewModel();
             UsersPartial = new UserListPartialViewModel();
             CarTypePartial = new CarTypePartialViewModel(); // YENİ EKLENDİ
+            LocationsPartial = new LocationPartialViewModel();
             ActiveTab = "penalty-definitions"; // Varsayılan aktif tab
         }
     }
